@@ -1,0 +1,229 @@
+---
+title: "Preprocessing"
+author: "Sophia Kleist Karlson"
+date: "11 nov 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
+
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+RStudio.Version() #why this?
+```
+
+
+
+This loop works
+```{r}
+
+#specifying data path
+data_path <- 'data' 
+
+#creating a list of files
+list_files <- list.files(path = data_path,
+                         recursive = T,
+                         pattern = "session.json$",
+                         full.names = T)
+
+list_files
+# wmpty data fame with the correct column names
+
+all_data <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+length(list_files)
+
+# function that shifts one column one row up
+shift2 <- function(x, n) `length<-`(tail(x, -n), length(x)) 
+
+
+for (i in 1:length(list_files)){
+  shift2 <- function(x, n) `length<-`(tail(x, -n), length(x)) 
+  file_path <- list_files[i]
+  d <- jsonlite::fromJSON(file_path, flatten=T) %>% 
+    transform(responses = shift2(responses, 1)) %>% 
+    filter(is.na(id) + is.na(responses) < 2 ,) %>%
+    add_column(Age = NA) %>% 
+    add_column(Gender = NA) %>% 
+    add_column(Occupation = NA) %>% 
+    add_column(Chain = NA) %>% 
+    add_column(Generation = NA) %>% 
+    add_column(Condition = NA) %>%
+    add_column(Confidence = NA) %>% 
+    add_column(Difficulty = NA) %>% 
+    add_column(Like = NA) %>% 
+    add_column(Experience = NA) %>% 
+    select(subject, Age, Gender, Occupation, Chain, Generation, Condition, source_images, Confidence, responses, Difficulty, Like, Experience, id, files.image.path) %>% 
+    #extracting answers from questionaires
+    mutate(Experience = tail(responses, 3)[2] %>% str_replace_all('^\\{"Q0":"|"\\}$', ''),
+          Gender = str_split_fixed(tail(responses, 3)[3], "\\,",3)[,1] %>% str_replace_all('\\{"gender":"|"$', ''),
+          Age = str_split_fixed(tail(responses, 3)[3], "\\,",3)[,2] %>% str_replace_all('"age":"|"$', ''),
+          Occupation = str_split_fixed(tail(responses, 3)[3], "\\,",3)[,3] %>% str_replace_all('"occupation":"|"\\}$', ''),
+          Confidence = str_replace_all(responses, '\\{"confidence":|\\}', ''),
+          Chain = str_replace_all(files.image.path[2], '/\\d+/tutorial1.png', '') %>% str_extract('[:digit:]+$'),
+          Generation = str_replace_all(files.image.path[2], '/\\d+/|/tutorial1.png', '') %>% str_extract('[:digit:]+$'),
+          Condition = str_replace_all(id, 'cond_|_stim_\\d+', ''))
+  
+  #extracting difficulty and likability
+  if (str_detect(tail(d$responses, 3)[1], '\\{"post_questionaire":\\d+\\}') == TRUE){
+    d <- d %>% mutate(Difficulty = tail(responses, 3)[1] %>% str_replace_all('\\{"post_questionaire":|\\}', ''))
+  } else {
+    d <- d %>% 
+      mutate(Difficulty = str_split_fixed(tail(responses, 3)[1], "\\,",2)[,2] %>% str_replace_all('"post_questionaire_difficulty":|\\}', ''), 
+      Like = str_split_fixed(tail(responses, 3)[1], "\\,",2)[,1] %>% str_replace_all('\\{"post_questionaire_like":', ''))
+  }
+  
+  # take care of source images, chain, gen and cond
+  Source_images <- d$source_images[[2]] %>% rename(id = trial_id)
+  d <- merge(d, Source_images)#, sort = FALSE
+  
+  d <- d %>% 
+    mutate(stimulus = str_replace_all(stimulus, './img/stim_|.png', '')) %>% 
+    rename(Source_image = stimulus, 
+           Subject = subject) %>%  
+    select(Subject, Age, Gender, Occupation, Chain, Generation, Condition, Source_image, Confidence, Difficulty, Like, Experience, files.image.path)
+  
+  if (nrow(all_data) == 0){
+    all_data <- d
+  } else{
+    all_data <- rbind(all_data, d)
+  }
+}
+
+```
+
+
+Inspecting that everything looks fine
+```{r}
+
+#is.na(all_data)
+
+# These should be numeric
+class(all_data$Generation)
+class(all_data$Confidence)
+class(all_data$Like)
+class(all_data$Difficulty)
+
+all_data$Generation <- as.numeric(all_data$Generation)
+all_data$Confidence <- as.numeric(all_data$Confidence)
+all_data$Like <- as.numeric(all_data$Like)
+all_data$Difficulty <- as.numeric(all_data$Difficulty)
+
+
+# These should be factor
+class(all_data$Chain)
+class(all_data$Condition)
+class(all_data$Source_image)
+
+all_data$Chain <- as.factor(all_data$Chain)
+all_data$Condition <- as.factor(all_data$Condition) 
+all_data$Source_image <- as.factor(all_data$Source_image)
+
+
+# These should be character
+class(all_data$Subject)
+class(all_data$Age)
+class(all_data$Gender)
+class(all_data$Occupation)
+
+
+
+# Checking range of some variables
+range(all_data$Chain)
+range(all_data$Generation)
+range(all_data$Source_image)
+range(all_data$Confidence)
+
+
+# Delete rows from chains with missing drawings (chain 1, 6, 10 and 23)
+all_data <- all_data[!all_data$Chain == 1,]
+all_data <- all_data[!all_data$Chain == 6,]
+all_data <- all_data[!all_data$Chain == 10,]
+all_data <- all_data[!all_data$Chain == 11,]
+all_data <- all_data[!all_data$Chain == 24,]
+
+#write csv file with ID's and image paths
+write.csv(all_data, "data/cleaned_data.csv")
+```
+
+
+
+Make unique drawing IDs and export their paths in a csv
+```{r}
+
+#first, add an "ID" row for individual id's containing chain, generation, condition and source image
+
+all_data <- all_data %>% 
+  mutate(Drawing_ID = paste("Chain_", Chain, "_Gen_", Generation, "_Cond_", Condition, "_Source_", Source_image, sep=""))
+#all_data$Drawing_ID
+
+
+#create dataframe with image paths and unique ID's
+image_names <- data.frame(matrix(ncol = 1, nrow = nrow(all_data)))
+
+# take image paths from all_data and use as image path column, just take out and rename the first part of the path that is not called the same on my computer:
+image_names$image_path <- all_data$files.image.path %>%  str_replace_all('^/experiments/VY53sLXHyJ6H/0G5z021ZWZdA/', 'data/')
+#tried this, but it didn't work: ^/[[:alpha:]+]/[[:alnum:]+]/[[:alnum:]+]/\\d+/\\d+/
+#the paths look like this: /experiments/VY53sLXHyJ6H/0G5z021ZWZdA/0/0/cond_1_stim_1.png
+
+#take unique drawing ID names
+image_names$Drawing_ID <- all_data$Drawing_ID
+image_names[,1] <- NULL
+
+#write csv file with ID's and image paths
+write.csv(image_names, "data/Drawing_IDs.csv")
+
+
+```
+
+
+
+# comparing complexity of orignal and blurred images
+```{r}
+
+# read complexity data and delete the first unnecessary column
+complexity_data <- read.csv("data/complexity_comparison.csv")
+complexity_data$X <- NULL
+
+
+#check class of complexity measures - they need to be numeric
+class(complexity_data$Complexity_original)
+class(complexity_data$Complexity_convolution)
+
+complexity_data$Complexity_original <- as.numeric(complexity_data$Complexity_original)
+complexity_data$Complexity_convolution <- as.numeric(complexity_data$Complexity_convolution)
+
+
+# make a column with the rato of complexity between the blurred and original images
+complexity_data <- complexity_data %>% mutate(ratio = Complexity_convolution/Complexity_original)
+range(complexity_data$ratio)
+
+
+#why does this not work?
+complexity_data <- complexity_data %>% mutate(mean_comp = mean(Complexity_original, Complexity_convolution))
+
+
+# correlation between the ratio and the comlexity of orignals
+cor(complexity_data$ratio, complexity_data$Complexity_original) #-0.1768 - pretty weak correlation, but still there
+cor(complexity_data$ratio, complexity_data$Complexity_convolution) # -0.1259 - even weaker
+
+```
+
+
+Merge complexity dataframe with all_data
+```{r}
+all_data_2 <- merge(all_data, complexity_data)
+
+all_data_2$Complexity <- all_data_2$Complexity_convolution
+
+all_data_2$Complexity_convolution <- NULL
+
+
+#write csv file with complexity scores
+write.csv(all_data_2, "data/data_w_complexity.csv")
+```
+

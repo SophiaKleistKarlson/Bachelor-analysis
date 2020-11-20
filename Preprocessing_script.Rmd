@@ -174,12 +174,20 @@ image_names$image_path <- all_data$files.image.path %>%  str_replace_all('^/expe
 image_names$Drawing_ID <- all_data$Drawing_ID
 image_names[,1] <- NULL
 
+source_names <- c("stim_1", "stim_2", "stim_3", "stim_4", "stim_5", "stim_6", "stim_7", "stim_8", "stim_9", "stim_10", "stim_11", "stim_12")
+drawing_names <- image_names[,2]
+
+names <- c(drawing_names, source_names)
+
 #write csv file with ID's and image paths
+write.csv(names, "data/all_drawing_names.csv")
 write.csv(image_names, "data/Drawing_IDs.csv")
 
 
 ```
 
+
+NOW, THE PYTHON IMAGE PROCESSING SCRIPT IS RUN, WHICH CREATES THE COMPLEXITY_COMPARISON.CSV THAT IS USED BELOW
 
 
 # comparing complexity of orignal and blurred images
@@ -227,3 +235,163 @@ all_data_2$Complexity_convolution <- NULL
 write.csv(all_data_2, "data/data_w_complexity.csv")
 ```
 
+
+
+importing conventionality data
+```{r}
+
+#specifying data path
+data_path_m <- 'data/mturk' 
+
+#creating a list of files
+list_files_m <- list.files(path = data_path_m,
+                         recursive = T,
+                         pattern = "session.json$",
+                         full.names = T)
+
+data_path_m
+list_files_m
+# wmpty data fame with the correct column names
+
+all_data_m <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+length(list_files_m)
+
+
+# extract all mturk files and 
+for (i in 1:length(list_files_m)){
+  file_path_m <- list_files_m[i]
+  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
+    select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m) == 0){
+    all_data_m <- d_m
+  } else {
+    all_data_m <- rbind(all_data_m, d_m)
+  }
+}
+
+class(all_data_m$Conventionality)
+all_data_m$Conventionality <- as.numeric(all_data_m$Conventionality)
+mean(all_data_m$Conventionality)
+sd(all_data_m$Conventionality)
+range(all_data_m$Conventionality)
+
+completion_codes <- all_data_m$completion_code 
+completion_codes <- completion_codes[complete.cases(completion_codes)]
+
+
+
+
+#merge conventionality scores with all_data
+all_data_w_convention <- merge(all_data, all_data_m)
+all_data_w_conv_comp <- merge(all_data_2, all_data_m)
+
+all_data_w_convention$completion_code <- NULL 
+all_data_w_conv_comp$completion_code <- NULL 
+
+#write csv files
+write.csv(all_data_w_convention, "data/all_data_w_convention.csv") # all data with conventionality scores
+write.csv(completion_codes, "data/completion_codes.csv") # completion codes
+write.csv(all_data_m, "data/conventionality_data.csv") # conventionality scores
+write.csv(all_data_w_conv_comp, "data/all_data_w_conv_comp.csv") # all data with conventionality and complexity scores
+
+
+```
+
+
+
+
+looking at conventionality from the last 35 trials for each participant
+```{r}
+all_data_m1 <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+for (i in 1:length(list_files_m)){
+  file_path_m <- list_files_m[i]
+  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
+    #select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m1) == 0){
+    all_data_m1 <- d_m
+  } else {
+    all_data_m1 <- rbind(all_data_m1, d_m)
+  }
+}
+
+all_data_m1$Conventionality <- as.numeric(all_data_m1$Conventionality)
+class(all_data_m1$Conventionality)
+
+conv_last35 <- all_data_m1 %>% 
+  group_by(subject) %>%   
+  slice(tail(row_number(), 35)) %>% 
+  select(Conventionality, subject) %>% 
+  as.data.frame()
+
+mean(conv_last35$Conventionality) #4.606845 - so basically the same as the overall mean
+sd(conv_last35$Conventionality) #2.965397 - also basically the same - both mean and sd go up 0.1 but it doesn't seem problematic
+```
+
+
+
+
+making a local source drawing list for calculating MSE
+```{r}
+drawing_orig <- all_data %>% select(Chain, Generation, Source_image, Drawing_ID)
+drawing_copy <- drawing_orig
+
+shift <- function(x, n) `length<-`(tail(x, +n), length(x))
+
+
+drawing_orig1 <- drawing_orig
+
+for (i in drawing_orig1){
+  drawing_orig1 <- drawing_orig1 %>% transform(Drawing_ID = shift(Drawing_ID, 1))
+  if (nrow(all_data) == 0){
+    all_data <- drawing_orig1
+  } else{
+    all_data <- rbind(all_data, drawing_orig1)
+  }
+}
+
+
+
+class(drawing_copy$Generation)
+
+drawing_copy$Chain <- as.character(drawing_copy$Chain)
+drawing_copy$Chain <- as.numeric(drawing_copy$Chain)
+
+drawing_copy$Source_image <- as.character(drawing_copy$Source_image)
+drawing_copy$Source_image <- as.numeric(drawing_copy$Source_image)
+
+drawing_orig$Chain <- as.character(drawing_orig$Chain)
+drawing_orig$Chain <- as.numeric(drawing_orig$Chain)
+
+drawing_orig$Source_image <- as.character(drawing_orig$Source_image)
+drawing_orig$Source_image <- as.numeric(drawing_orig$Source_image)
+
+
+
+for (i in 1:nrow(drawing_orig)){
+  if (drawing_copy$Generation[i] == 0){
+    drawing_orig$Drawing_ID[i] <- paste("stim_",drawing_copy$Source_image[i], sep="")
+  } else if (drawing_orig$Drawing_ID[i] == drawing_copy$Drawing_ID[i]){
+    drawing_orig$Drawing_ID[i] <- drawing_copy$Drawing_ID[i-12]
+  }
+}
+
+drawing_ids_copy_orig <- data.frame(matrix(ncol = 1, nrow = 1680))
+drawing_ids_copy_orig$Orig_ID <- drawing_orig$Drawing_ID
+drawing_ids_copy_orig$Copy_ID <- drawing_copy$Drawing_ID
+drawing_ids_copy_orig[,1] <- NULL
+
+write.csv(drawing_ids_copy_orig, "data/drawings_source_copy.csv")
+write.csv(drawing_orig, "data/drawings_source.csv")
+write.csv(drawing_copy, "data/drawings_copy.csv")
+
+```
+
+  

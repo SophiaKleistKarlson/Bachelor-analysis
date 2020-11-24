@@ -1,0 +1,101 @@
+---
+title: "Preprocessing MSE"
+author: "Sophia Kleist Karlson"
+date: "22 nov 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
+
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+RStudio.Version() #why this?
+```
+
+
+
+
+making a local source drawing list for calculating MSE
+```{r}
+drawing_orig <- all_data %>% select(Chain, Generation, Source_image, Drawing_ID)
+drawing_copy <- drawing_orig
+
+shift <- function(x, n) `length<-`(tail(x, +n), length(x))
+
+
+drawing_orig1 <- drawing_orig
+
+for (i in drawing_orig1){
+  drawing_orig1 <- drawing_orig1 %>% transform(Drawing_ID = shift(Drawing_ID, 1))
+  if (nrow(all_data) == 0){
+    all_data <- drawing_orig1
+  } else{
+    all_data <- rbind(all_data, drawing_orig1)
+  }
+}
+
+
+
+class(drawing_copy$Generation)
+
+drawing_copy$Chain <- as.character(drawing_copy$Chain)
+drawing_copy$Chain <- as.numeric(drawing_copy$Chain)
+
+drawing_copy$Source_image <- as.character(drawing_copy$Source_image)
+drawing_copy$Source_image <- as.numeric(drawing_copy$Source_image)
+
+drawing_orig$Chain <- as.character(drawing_orig$Chain)
+drawing_orig$Chain <- as.numeric(drawing_orig$Chain)
+
+drawing_orig$Source_image <- as.character(drawing_orig$Source_image)
+drawing_orig$Source_image <- as.numeric(drawing_orig$Source_image)
+
+
+
+for (i in 1:nrow(drawing_orig)){
+  if (drawing_copy$Generation[i] == 0){
+    drawing_orig$Drawing_ID[i] <- paste("stim_",drawing_copy$Source_image[i], sep="")
+  } else if (drawing_orig$Drawing_ID[i] == drawing_copy$Drawing_ID[i]){
+    drawing_orig$Drawing_ID[i] <- drawing_copy$Drawing_ID[i-12]
+  }
+}
+
+drawing_ids_copy_orig <- data.frame(matrix(ncol = 1, nrow = 1680))
+drawing_ids_copy_orig$Orig_ID <- drawing_orig$Drawing_ID
+drawing_ids_copy_orig$Copy_ID <- drawing_copy$Drawing_ID
+drawing_ids_copy_orig[,1] <- NULL
+
+write.csv(drawing_ids_copy_orig, "data/csv_files/drawings_source_copy.csv")
+write.csv(drawing_orig, "data/csv_files/drawings_source.csv")
+write.csv(drawing_copy, "data/csv_files/drawings_copy.csv")
+
+```
+
+
+
+Importing MSE data
+```{r}
+# read MSE data and delete the first unnecessary column
+MSE_data <- read.csv("data/csv_files/similarity_data_all.csv")
+MSE_data$X <- NULL
+
+# deleting the path part of the ID columns
+MSE_data$Drawing_ID <- MSE_data$Drawing_ID %>% str_replace_all('data/resized/|.png', '')
+MSE_data$Orig_ID <- MSE_data$Orig_ID %>% str_replace_all('data/resized/|.png', '')
+
+all_data_w_MSE <- merge(all_data, MSE_data)
+write.csv(all_data_w_MSE, "data/csv_files/all_data_w_MSE.csv") # all data with MSE, conventionality and complexity scores - the latter not for the source images though!
+
+```
+
+
+

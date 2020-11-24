@@ -1,0 +1,286 @@
+---
+title: "Analysis_mod_MSE"
+author: "Sophia Kleist Karlson"
+date: "22 nov 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+Mod 3: Error between images
+
+
+```{r}
+
+setwd("~/Social Transmission Study/Analysis of drawings/")
+pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
+
+RStudio.Version()
+
+data_MSE <- read_csv("data/csv_files/all_data_w_MSE.csv") #we use all_data_w_MSE.csv
+data_MSE$X1 <- NULL#removing the first unnecessary column
+
+```
+
+Preparing the data and checking stuff
+```{r}
+# Checking classes
+
+# Generation and MSE should be numeric
+class(data_MSE$Generation)
+class(data_MSE$MSE)
+
+# Subject and Drawing ID should be character
+class(data_MSE$Subject)
+class(data_MSE$Drawing_ID)
+
+# Chain, condition and Source_image should be factors
+class(data_MSE$Chain)
+class(data_MSE$Condition)
+class(data_MSE$Source_image)
+
+data_MSE$Chain <- as.factor(data_MSE$Chain)
+data_MSE$Condition <- as.factor(data_MSE$Condition)
+data_MSE$Source_image <- as.factor(data_MSE$Source_image)
+
+
+# Chose the variables needed for the model
+df_MSE <- data_MSE %>% select(Subject, Chain, Generation, Condition, Source_image, MSE)
+
+```
+
+
+some plots
+```{r}
+# we make condition into numeric for the plots
+class(df_MSE$Condition)
+df_MSE$Condition <- as.numeric(df_MSE$Condition)
+
+class(df_MSE$MSE)
+
+range(df_MSE$MSE)
+mean(df_MSE$MSE)#9427.756
+sd(df_MSE$MSE)#2412.739
+
+# conditions and conventionality
+plot_simple_cond <- ggplot(df_MSE, aes(Condition, MSE)) +
+                             geom_jitter()#geom_smooth(method = lm)#geom_jitter()#geom_bar(stat = "identity")
+plot_simple_cond
+
+# generation and conventionality
+plot_simple_gen <- ggplot(df_MSE, aes(Generation, MSE)) +
+  geom_bar(stat = "identity")
+  #geom_smooth(method = lm)
+plot_simple_gen
+
+
+
+
+# generation, condition and conventionality
+df_MSE$Condition <- as.factor(df_MSE$Condition)
+
+plot_simple_gen_cond <- ggplot(df_MSE, aes(Generation, MSE, color = Condition)) +
+                             geom_smooth(method = lm)
+plot_simple_gen_cond
+
+
+
+df_MSE$Generation <- as.factor(df_MSE$Generation)
+
+
+plot_simple_gen_cond1 <- ggplot(subset(df_MSE, Condition == 1), aes(Generation, MSE)) +
+                             geom_bar(stat = "identity")
+plot_simple_gen_cond1
+
+plot_simple_gen_cond2 <- ggplot(subset(df_MSE, Condition == 2), aes(Generation, MSE)) +
+                             geom_bar(stat = "identity")
+plot_simple_gen_cond2
+
+plot_simple_gen_cond3 <- ggplot(subset(df_MSE, Condition == 3), aes(Generation, MSE)) +
+                             geom_bar(stat = "identity")
+
+plot_simple_gen_cond3
+
+
+plot_simple_gen_cond4 <- ggplot(subset(df_MSE, Condition == 4), aes(Generation, MSE)) +
+                             geom_bar(stat = "identity")
+plot_simple_gen_cond4
+
+
+
+
+# source image and conventionality
+plot_simple_gen_source <- ggplot(df_MSE, aes(Source_image, MSE)) +
+  geom_bar(stat = "identity")# +
+  #geom_errorbar(aes(ymin=(Complexity-sd(Complexity)), ymax=(Complexity-sd(Complexity))), width=.2, position=position_dodge(.9))
+plot_simple_gen_source
+
+# participant and conventionality
+plot_simple_subj <- ggplot(df_MSE, aes(Subject, MSE)) +
+                            geom_jitter()#geom_bar(stat = "identity")
+plot_simple_subj
+
+```
+
+
+Ideal model: 
+
+Complexity ~ 1 + Condition*Generation +
+  (1 + condition*generation | Source_image) +
+  (1 + condition*generation | Subject:Chain) +
+  (1 + condition*generation | Chain)
+
+
+simple model, with no bayesian fansy
+```{r}
+pacman::p_load(lmerTest, ggplot2)
+
+simple_mod_MSE_1 <- lm(MSE ~ 1 + Condition, df_MSE)
+summary(simple_mod_MSE_1)
+
+simple_mod_MSE_2 <- lm(MSE ~ 1 + Generation, df_MSE)
+summary(simple_mod_MSE_2) # there is a small rise in conventionality through generations across conditions
+
+simple_mod_MSE_3 <- lm(MSE ~ 1 + Generation*Condition, df_MSE)
+summary(simple_mod_MSE_3) # I'm a bit confused by these results
+
+
+simple_mod_MSE_4 <- lmerTest::lmer(MSE ~ 1 + Condition + (1 + Condition | Subject), df_MSE) # failed to converge
+summary(simple_mod_MSE_4)
+
+simple_mod_MSE_5 <- lmerTest::lmer(MSE ~ 1 + Generation + (1 + Generation | Subject), df_MSE)# boundary singular fit and failed to converge
+summary(simple_mod_MSE_5)
+
+
+simple_mod_MSE_6 <- lmerTest::lmer(MSE ~ 1 + Condition + Generation + 
+                       (1 + Condition + Generation | Subject), df_MSE)
+summary(simple_mod_MSE_6)
+
+simple_mod_MSE_7 <- lmerTest::lmer(MSE ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_MSE)
+summary(simple_mod_MSE_7)
+```
+
+lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
+     start = NULL, verbose = 0L, subset, weights, na.action,
+     offset, contrasts = NULL, devFunOnly = FALSE)
+
+mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
+summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.
+
+
+
+
+
+Modeling
+```{r}
+# Set seed so that the analysis can be re-run and give the same results
+set.seed(555)
+
+# Define the model
+MSE_mod <- bf(MSE ~ 1 + Condition + Generation + Condition:Generation) #+ 
+                       #(1 + Condition + Generation + Condition:Generation | Subject)) #+
+                       #(1 + Condition + Generation + Condition:Generation | Source_image))
+
+
+# Figure out what priors we'll need
+get_prior(MSE_mod, family = gaussian, df_MSE)
+
+# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta- and intercept-priors
+range(df_MSE$MSE)
+mean(df_MSE$MSE)
+sd(df_MSE$MSE)
+
+# For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
+df_part <- df_MSE %>% group_by(Subject) %>% summarize(mean_MSE = mean(MSE)) #find mean complexity for each participant
+sd(df_part$mean_MSE)/2 #get the standard deviation of the mean complexity for each participant. Divide this in two
+
+
+prior_MSE_mod <- c(
+  prior(normal(4.38, 2.81),     class = b), #mean and sd of Conventionality
+  #prior(lkj(1),                        class = cor),
+  prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of Conventionality
+  #prior(normal(0, 1390.23),            class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(normal(2.81, 1.40),      class = sigma) #mean: sd of Conventionality. sigma: half of the sd of Conventionality
+)
+
+
+# Running the model to check priors
+MSE_mod0 <- brm(
+  formula = MSE_mod, 
+  prior = prior_MSE_mod,
+  data = df_MSE,
+  chains = 2,
+  cores = 2,
+  sample_prior = "only"
+)
+
+
+# Prior predictive check
+pp_check(MSE_mod0, nsamples = 100) # 
+
+
+# The actual model:
+MSE_mod1 <- brm(
+  formula = MSE_mod, 
+  prior = prior_MSE_mod,
+  data = df_MSE,
+  chains = 2,
+  cores = 2,
+  sample_prior = T,
+  iter = 4000,
+  control = list(adapt_delta=0.99, max_treedepth=20)
+)
+
+# Posterior predictive check
+pp_check(MSE_mod1, nsamples = 100)
+
+
+
+# Model summary
+summary(MSE_mod1) # Warnings? Suspicious Rhat activity? Bad priors?
+
+# Plot the model to get trace plots
+plot(MSE_mod1)
+
+
+# Rank trace plots
+mcmc_rank_overlay(MSE_mod1, 
+                  pars = c("b_Intercept", "b_Condition2", "b_Condition3", "b_Condition4")) + 
+  theme_classic()
+
+mcmc_rank_overlay(MSE_mod1, 
+                  pars = c("b_Generation", "b_Condition2:Generation", "b_Condition3:Generation", "b_Condition4:Generation")) + 
+  theme_classic()
+
+mcmc_rank_overlay(MSE_mod1, 
+                  pars = c("sigma")) + 
+  theme_classic()
+
+
+
+
+hypothesis(MSE_mod1,"Condition2 = Condition3") # Is condition 2 more complex than condition 3?
+hypothesis(MSE_mod1,"Condition3 = Condition4")
+hypothesis(MSE_mod1,"Condition2 = Condition4")
+
+hypothesis(MSE_mod1,"Intercept > 0")
+
+hypothesis(MSE_mod1,"Generation = 0") # this is the most probable in terms of generation
+hypothesis(MSE_mod1,"Condition2:Generation > 0") # this is more probable than =, and a LOT more than <
+hypothesis(MSE_mod1,"Condition3:Generation > 0") # this is more probable than =, and a LOT more than <
+hypothesis(MSE_mod1,"Condition4:Generation > 0") # this is more probable than =, and a LOT more than <
+
+plot(hypothesis(MSE_mod1, "")) # After trying different hypotheses, this turned out to be the best
+
+
+# Plot conditional effects
+conditional_effects(MSE_mod1)
+```
+
+
+
+

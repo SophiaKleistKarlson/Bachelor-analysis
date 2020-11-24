@@ -1,0 +1,76 @@
+---
+title: "Preprocessing complexity"
+author: "Sophia Kleist Karlson"
+date: "22 nov 2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+
+pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
+
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+RStudio.Version() #why this?
+```
+
+
+
+
+
+
+NOW, THE PYTHON IMAGE PROCESSING SCRIPT IS RUN, WHICH CREATES THE COMPLEXITY_COMPARISON.CSV THAT IS USED BELOW
+
+
+# comparing complexity of orignal and blurred images
+```{r}
+
+# read complexity data and delete the first unnecessary column
+complexity_data <- read.csv("data/csv_files/complexity_comparison.csv")
+complexity_data$X <- NULL
+
+
+#check class of complexity measures - they need to be numeric
+class(complexity_data$Complexity_original)
+class(complexity_data$Complexity_convolution)
+
+complexity_data$Complexity_original <- as.numeric(complexity_data$Complexity_original)
+complexity_data$Complexity_convolution <- as.numeric(complexity_data$Complexity_convolution)
+
+
+# make a column with the rato of complexity between the blurred and original images
+complexity_data <- complexity_data %>% mutate(ratio = Complexity_convolution/Complexity_original)
+range(complexity_data$ratio)
+
+
+#why does this not work?
+#complexity_data <- complexity_data %>% mutate(mean_comp = mean(Complexity_original, Complexity_convolution))
+
+
+# correlation between the ratio and the comlexity of orignals
+cor(complexity_data$ratio, complexity_data$Complexity_original) #-0.1768 - pretty weak correlation, but still there
+cor(complexity_data$ratio, complexity_data$Complexity_convolution) # -0.1259 - even weaker
+
+```
+
+
+Merge complexity dataframe with all_data
+```{r}
+all_data_2 <- merge(all_data, complexity_data)
+
+all_data_2$Complexity <- all_data_2$Complexity_convolution
+
+all_data_2$Complexity_convolution <- NULL
+
+
+#write csv file with complexity scores
+write.csv(all_data_2, "data/csv_files/data_w_complexity.csv")
+```
+

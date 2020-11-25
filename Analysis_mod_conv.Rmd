@@ -159,13 +159,17 @@ SD %>%
 SD_chain <- SD %>% 
     group_by(Generation, Condition, Chain) %>%
     summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
-              conv.se = sd(Conventionality)/sqrt(16)) 
+              conv.se = sd(Conventionality)/sqrt(16), 
+              comp.mean = mean(Complexity), comp.sd = sd(Complexity), 
+              comp.se = sd(Complexity)/sqrt(16)) 
 
 
 SD_1 <- all_data_w_all_conv_source %>% 
     group_by(Generation, Condition) %>%
     summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
-              conv.se = sd(Conventionality)/sqrt(320)) 
+              conv.se = sd(Conventionality)/sqrt(320),
+              comp.mean = mean(Complexity), comp.sd = sd(Complexity), 
+              comp.se = sd(Complexity)/sqrt(320)) 
 
 
 ggplot(SD_chain, aes(Generation, conv.mean, fill = Condition)) +
@@ -180,6 +184,22 @@ ggplot(SD_1, aes(Generation, conv.mean, fill = Condition)) +
     geom_col(position = position_dodge(width = 0.8)) +
     geom_errorbar(
         aes(ymin = conv.mean - conv.se, ymax = conv.mean + conv.se),
+        position = position_dodge(width = 0.8),
+        width = 0.2)
+
+
+ggplot(SD_chain, aes(Generation, comp.mean, fill = Condition)) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    geom_errorbar(
+        aes(ymin = comp.mean - comp.se, ymax = comp.mean + comp.se),
+        position = position_dodge(width = 0.8),
+        width = 0.2) +
+    facet_wrap(SD_chain$Chain)
+
+ggplot(SD_1, aes(Generation, comp.mean, fill = Condition)) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    geom_errorbar(
+        aes(ymin = comp.mean - comp.se, ymax = comp.mean + comp.se),
         position = position_dodge(width = 0.8),
         width = 0.2)
 

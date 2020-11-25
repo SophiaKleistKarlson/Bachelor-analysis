@@ -13,7 +13,7 @@ pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
 
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
-RStudio.Version() #why this?
+RStudio.Version()
 ```
 
 
@@ -31,22 +31,32 @@ list_files <- list.files(path = data_path,
                          full.names = T)
 
 list_files
-# wmpty data fame with the correct column names
 
+# empty dataframe 
 all_data <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
 
 length(list_files)
 
+
 # function that shifts one column one row up
 shift2 <- function(x, n) `length<-`(tail(x, -n), length(x)) 
 
-
+# loop that goes through the list of files and extracts the necessary data
 for (i in 1:length(list_files)){
-  shift2 <- function(x, n) `length<-`(tail(x, -n), length(x)) 
+  
+  # make filepath from the i element in the list of files
   file_path <- list_files[i]
-  d <- jsonlite::fromJSON(file_path, flatten=T) %>% 
+  
+  # extract the json into object j and flatten it
+  d <- jsonlite::fromJSON(file_path, flatten=T) %>%
+    
+    # use shift2 function to shift the response column one row up
     transform(responses = shift2(responses, 1)) %>% 
+    
+    # filter out rows where both the id column and response column have NA
     filter(is.na(id) + is.na(responses) < 2 ,) %>%
+    
+    # add empty columns
     add_column(Age = NA) %>% 
     add_column(Gender = NA) %>% 
     add_column(Occupation = NA) %>% 
@@ -57,8 +67,11 @@ for (i in 1:length(list_files)){
     add_column(Difficulty = NA) %>% 
     add_column(Like = NA) %>% 
     add_column(Experience = NA) %>% 
+    
+    # select these columns
     select(subject, Age, Gender, Occupation, Chain, Generation, Condition, source_images, Confidence, responses, Difficulty, Like, Experience, id, files.image.path) %>% 
-    #extracting answers from questionaires
+  
+    # extract answers from questionaires
     mutate(Experience = tail(responses, 3)[2] %>% str_replace_all('^\\{"Q0":"|"\\}$', ''),
           Gender = str_split_fixed(tail(responses, 3)[3], "\\,",3)[,1] %>% str_replace_all('\\{"gender":"|"$', ''),
           Age = str_split_fixed(tail(responses, 3)[3], "\\,",3)[,2] %>% str_replace_all('"age":"|"$', ''),
@@ -68,7 +81,7 @@ for (i in 1:length(list_files)){
           Generation = str_replace_all(files.image.path[2], '/\\d+/|/tutorial1.png', '') %>% str_extract('[:digit:]+$'),
           Condition = str_replace_all(id, 'cond_|_stim_\\d+', ''))
   
-  #extracting difficulty and likability
+  # extract difficulty and likability responses
   if (str_detect(tail(d$responses, 3)[1], '\\{"post_questionaire":\\d+\\}') == TRUE){
     d <- d %>% mutate(Difficulty = tail(responses, 3)[1] %>% str_replace_all('\\{"post_questionaire":|\\}', ''))
   } else {
@@ -77,16 +90,22 @@ for (i in 1:length(list_files)){
       Like = str_split_fixed(tail(responses, 3)[1], "\\,",2)[,1] %>% str_replace_all('\\{"post_questionaire_like":', ''))
   }
   
-  # take care of source images, chain, gen and cond
+  # make dataframe with source images and their id
   Source_images <- d$source_images[[2]] %>% rename(id = trial_id)
-  d <- merge(d, Source_images)#, sort = FALSE
   
+  # merge d and the Source_images dataframe
+  d <- merge(d, Source_images)
+  
+  # mutate stimulus column from the Source_images df to get rid of image path, then call this column Source_image and rename subject to Subject
   d <- d %>% 
     mutate(stimulus = str_replace_all(stimulus, './img/stim_|.png', '')) %>% 
     rename(Source_image = stimulus, 
-           Subject = subject) %>%  
+           Subject = subject) %>% 
+    
+    # select these columns
     select(Subject, Age, Gender, Occupation, Chain, Generation, Condition, Source_image, Confidence, Difficulty, Like, Experience, files.image.path)
   
+  # if there is no rows in the all_data, make all_data from d, else rbind the existing all_data with d 
   if (nrow(all_data) == 0){
     all_data <- d
   } else{
@@ -99,8 +118,6 @@ for (i in 1:length(list_files)){
 
 Inspecting that everything looks fine
 ```{r}
-
-#is.na(all_data)
 
 # These should be numeric
 class(all_data$Generation)
@@ -131,7 +148,6 @@ class(all_data$Gender)
 class(all_data$Occupation)
 
 
-
 # Checking range of some variables
 range(all_data$Chain)
 range(all_data$Generation)
@@ -139,7 +155,7 @@ range(all_data$Source_image)
 range(all_data$Confidence)
 
 
-# Delete rows from chains with missing drawings (chain 1, 6, 10 and 23)
+# Delete rows from chains with missing drawings (chain 1, 6, 10, 11 and 24)
 all_data <- all_data[!all_data$Chain == 1,]
 all_data <- all_data[!all_data$Chain == 6,]
 all_data <- all_data[!all_data$Chain == 10,]
@@ -165,7 +181,6 @@ image_names <- data.frame(matrix(ncol = 1, nrow = nrow(all_data)))
 
 # take image paths from all_data and use as image path column, just take out and rename the first part of the path that is not called the same on my computer:
 image_names$image_path <- all_data$files.image.path %>%  str_replace_all('^/experiments/VY53sLXHyJ6H/0G5z021ZWZdA/', 'data/')
-#tried this, but it didn't work: ^/[[:alpha:]+]/[[:alnum:]+]/[[:alnum:]+]/\\d+/\\d+/
 #the paths look like this: /experiments/VY53sLXHyJ6H/0G5z021ZWZdA/0/0/cond_1_stim_1.png
 
 #take unique drawing ID names
@@ -181,6 +196,7 @@ names <- c(drawing_names, source_names)
 write.csv(names, "data/csv_files/all_drawing_names.csv")
 write.csv(image_names, "data/csv_files/Drawing_IDs.csv")
 
+# write csv with all the cleaned data
 write.csv(all_data, "data/csv_files/cleaned_data.csv")
 
 ```

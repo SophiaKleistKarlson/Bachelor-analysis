@@ -144,9 +144,44 @@ df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
 sd(all_data_w_all_conv_source$Conventionality)
 
 
-SD <- all_data_w_all_conv_source %>% group_by(Generation) %>% group_by(Condition) %>% mutate(SD_compl = sd(Complexity), SD_conv = sd(Conventionality)) %>% select(Chain, Generation, Condition, Complexity, Conventionality, SD_compl, SD_conv)
+SD <- all_data_w_all_conv_source %>% group_by(Generation, Condition) %>% mutate(SD_compl = sd(Complexity), SD_conv = sd(Conventionality)) %>% select(Chain, Generation, Condition, Complexity, Conventionality, SD_compl, SD_conv)
+
+SD %>%
+    group_by(Generation, Condition) %>%
+    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality)) %>%
+    ggplot(aes(Generation, conv.mean, fill = Condition)) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    geom_errorbar(
+        aes(ymin = conv.mean - conv.sd, ymax = conv.mean + conv.sd),
+        position = position_dodge(width = 0.8),
+        width = 0.2)
+
+SD_chain <- SD %>% 
+    group_by(Generation, Condition, Chain) %>%
+    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
+              conv.se = sd(Conventionality)/sqrt(16)) 
 
 
+SD_1 <- all_data_w_all_conv_source %>% 
+    group_by(Generation, Condition) %>%
+    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
+              conv.se = sd(Conventionality)/sqrt(320)) 
+
+
+ggplot(SD_chain, aes(Generation, conv.mean, fill = Condition)) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    geom_errorbar(
+        aes(ymin = conv.mean - conv.se, ymax = conv.mean + conv.se),
+        position = position_dodge(width = 0.8),
+        width = 0.2) +
+    facet_wrap(SD_chain$Chain)
+
+ggplot(SD_1, aes(Generation, conv.mean, fill = Condition)) +
+    geom_col(position = position_dodge(width = 0.8)) +
+    geom_errorbar(
+        aes(ymin = conv.mean - conv.se, ymax = conv.mean + conv.se),
+        position = position_dodge(width = 0.8),
+        width = 0.2)
 
 
 plot_simple_gen_cond <- ggplot(SD, aes(Generation, Conventionality, fill = Condition)) +
@@ -195,6 +230,10 @@ ggplot(df_conventionality, aes(x=Generation, y=Conventionality, fill=Condition))
                   position=position_dodge(.9))
 
 df_conventionality$Generation <- as.factor(df_conventionality$Generation)
+
+
+
+
 
 
 plot_simple_gen_cond1 <- ggplot(subset(df_conventionality, Condition == 1), aes(Generation, Conventionality)) +

@@ -158,8 +158,17 @@ all_data_w_source <- all_data_2
 # add 240 empty rows to be filled with source images in the beginning of each chain
 all_data_w_source[nrow(all_data_w_source)+240,] <- NA
 
-# check class of generation column
+# check classes and make them into numeric if necesarry
 class(all_data_w_source$Generation)
+class(all_data_w_source$Condition)
+class(all_data_w_source$Chain)
+class(all_data_w_source$Source_image)
+class(all_data_w_source$Complexity)
+
+all_data_w_source$Generation <- as.numeric(all_data_w_source$Generation)
+all_data_w_source$Condition <- as.numeric(all_data_w_source$Condition)
+all_data_w_source$Chain <- as.numeric(all_data_w_source$Chain)
+all_data_w_source$Source_image <- as.numeric(all_data_w_source$Source_image)
 
 # make every generation 1 higher
 all_data_w_source <- all_data_w_source %>% mutate(Generation = Generation +1)
@@ -176,12 +185,18 @@ source_comp$Generation <- rep(0,12)
 # add source image column, which is just the drawing id without "stim_"
 source_comp <- source_comp %>% mutate(Source_image = str_replace_all(Drawing_ID, 'stim_', ''))
 
-# make drawing id into character
+# make the source_image column numeric
+class(source_comp$Source_image)
+source_comp$Source_image <- as.numeric(source_comp$Source_image)
+
+# make drawing id into character for both datasets
 class(source_comp$Drawing_ID)
 source_comp$Drawing_ID <- as.character(source_comp$Drawing_ID)
 
+class(all_data_w_source$Drawing_ID)
+all_data_w_source$Drawing_ID <- as.numeric(all_data_w_source$Drawing_ID)
 
-# add columns from source_comp to all_data_w_source
+# add columns from source_comp to all_data_w_source   CHECK THE INDEXES!
 all_data_w_source[1681:1692,1] <- source_comp$Drawing_ID
 all_data_w_source[1681:1692,7] <- source_comp$Generation
 all_data_w_source[1681:1692,9] <- source_comp$Source_image
@@ -261,6 +276,7 @@ for (i in 1:1920){
         for (j in 1:1920){
           if (all_data_w_source[j, 6] == c & all_data_w_source[j, 7] == 1 & all_data_w_source[j, 9] == s){
             all_data_w_source[i, 8] <- all_data_w_source[j, 8]
+            all_data_w_source[i, 2] <- all_data_w_source[j, 2]
           }
         }
       }

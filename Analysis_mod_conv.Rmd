@@ -352,9 +352,9 @@ set.seed(555)
 
 
 # Define the model
-convention_mod <- bf(Conventionality ~ 1 + Condition + Generation + Condition:Generation + 
-                       #(1 + Condition + Generation + Condition:Generation | Subject:Chain)) #+
-                       (1 + Condition + Generation + Condition:Generation | Source_image))
+convention_mod <- bf(Conventionality ~ 1 + Generation + Condition + Generation:Condition + 
+                       (1 + Generation + Condition + Generation:Condition | Subject:Chain)+
+                       (1 + Generation + Condition + Generation:Condition | Source_image))
 
 
 # Figure out what priors we'll need
@@ -367,7 +367,7 @@ sd(df_conventionality$Conventionality)
 
 # For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
 df_subj <- df_conventionality %>% group_by(Subject) %>% summarize(conv_mean = mean(Conventionality)) #find mean complexity for each participant
-sd(df_subj$conv_mean)#get the standard deviation of the mean complexity for each participant (0.292944). Divide this in two (0.0732)
+sd(df_subj$conv_mean)#get the standard deviation of the mean complexity for each participant (0.2970962). Divide this in two (0.1485481)
 
 
 df_source <- df_conventionality %>% group_by(Source_image) %>% summarize(conv_mean = mean(Conventionality)) #find mean 
@@ -377,10 +377,14 @@ sd(df_source$conv_mean)# 0.3502272, half of this = 0.1751136
 # setting priors
 prior_convention_mod <- c(
   prior(normal(4.33, 2.80),     class = b), #mean and sd of Conventionality
-  prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
   prior(normal(4.33, 2.80),     class = Intercept), #mean and sd of Conventionality
-  prior(normal(0, 0.18),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
-  prior(normal(2.80, 1.40),     class = sigma) #mean: sd of Conventionality. sigma: half of the sd of Conventionality
+  prior(normal(2.80, 1.40),     class = sigma), #mean: sd of Conventionality. sigma: half of the sd of Conventionality
+  
+  prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
+  prior(normal(0, 0.15),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
+  
+  #prior(normal(0, 0.18),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
+  
 )
 
 
@@ -404,11 +408,11 @@ convention_mod1 <- brm(
   formula = convention_mod, 
   prior = prior_convention_mod,
   data = df_conventionality,
-  chains = 2,
-  cores = 2,
+  chains = 1,#2,
+  cores = 1,#2,
   sample_prior = T,
-  iter = 2000,
-  #iter = 4000,
+  #iter = 2000,
+  iter = 500,#4000,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )
 
@@ -425,15 +429,15 @@ plot(convention_mod1)
 
 
 # Rank trace plots
-mcmc_rank_overlay(complexity_mod1, 
+mcmc_rank_overlay(convention_mod1, 
                   pars = c("b_Intercept", "b_Condition2", "b_Condition3", "b_Condition4")) + 
   theme_classic()
 
-mcmc_rank_overlay(complexity_mod1, 
+mcmc_rank_overlay(convention_mod1, 
                   pars = c("b_Generation", "b_Condition2:Generation", "b_Condition3:Generation", "b_Condition4:Generation")) + 
   theme_classic()
 
-mcmc_rank_overlay(complexity_mod1, 
+mcmc_rank_overlay(convention_mod1, 
                   pars = c("sigma")) + 
   theme_classic()
 

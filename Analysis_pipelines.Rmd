@@ -12,12 +12,14 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ```{r}
 setwd("~/Social Transmission Study/Analysis of drawings/")
+
 pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
 
-RStudio.Version() #why this?
+RStudio.Version() 
 
-data <- read_csv("data/data_w_complexity.csv") #we use data_w_complexity.csv
-data$X1 <- NULL#removing the first unnecessary column
+data <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") # we use all_data_w_all_conv_source.csv
+
+data$X1 <- NULL # removing the first unnecessary column
 
 ```
 
@@ -138,8 +140,8 @@ Modeling
 set.seed(555)
 
 # Define the model
-complexity_mod <- bf(Complexity ~ 1 + Condition + Generation + Condition:Generation) #+ 
-                       #(1 + Condition + Generation + Condition:Generation | Subject)) #+
+complexity_mod <- bf(Complexity ~ 1 + Condition + Generation + Condition:Generation + 
+                       (1 + Condition + Generation + Condition:Generation | Subject:Chain)) #+
                        #(1 + Condition + Generation + Condition:Generation | Source_image))
 
 
@@ -157,11 +159,12 @@ sd(df_part$compl_mean)/2 #get the standard deviation of the mean complexity for 
 
 
 prior_complexity_mod <- c(
-  prior(normal(23964.86, 6553.69),     class = b), #mean and sd of complexity
-  #prior(lkj(1),                        class = cor),
-  prior(normal(23964.86, 6553.69),     class = Intercept), #mean and sd of complexity
-  #prior(normal(0, 1390.23),            class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
-  prior(normal(6553.69, 3276.85),      class = sigma) #mean: sd of complexity sigma: half of the sd of complexity
+  prior(normal(24641.25, 6399.96),     class = b), #mean and sd of complexity
+  prior(lkj(1),                         class = cor),
+  prior(normal(24641.25, 6399.96),     class = Intercept), #mean and sd of complexity
+  prior(normal(6399.96, 3199.98),     class = sigma), #mean: sd of complexity sigma: half of the sd of complexity
+  
+  prior(normal(0, 1428.93),            class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
 )
 
 
@@ -177,7 +180,7 @@ complexity_mod0 <- brm(
 
 
 # Prior predictive check
-pp_check(complexity_mod0, nsamples = 100) # 
+pp_check(complexity_mod0, nsamples = 100) 
 
 
 # The actual model:
@@ -185,10 +188,13 @@ complexity_mod1 <- brm(
   formula = complexity_mod, 
   prior = prior_complexity_mod,
   data = df_complexity,
-  chains = 2,
-  cores = 2,
+  #chains = 2,
+  #cores = 2,
+  chains = 1,
+  cores = 1, 
   sample_prior = T,
-  iter = 4000,
+  #iter = 4000,
+  iter = 500,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )
 

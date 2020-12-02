@@ -203,3 +203,34 @@ write.csv(all_data, "data/csv_files/cleaned_data.csv")
 
 
 
+Make smaller dataframe without personal data and only the variables we are going to need from here on
+```{r}
+cleaned_2 <- read.csv("data/csv_files/cleaned_data.csv")
+
+cleaned_2 <- cleaned_2 %>% select(Subject, Chain, Generation, Condition, Source_image, files.image.path, Drawing_ID)
+
+write.csv(cleaned_2, "data/csv_files/cleaned_data_small.csv")
+```
+
+
+
+Inspecting the comments and how much they liked the experience
+```{r}
+comments <- all_data %>% group_by(Subject) %>% filter(Source_image==1) %>% select(Experience, Like, Difficulty)
+
+comments$Experience
+
+class(comments$Like)
+
+range(comments$Like, na.rm = TRUE) # 0-6
+mean(comments$Like, na.rm = TRUE) # 4.55
+sd(comments$Like, na.rm = TRUE) # 1.37
+median(comments$Like, na.rm = TRUE) # 5 - not bad!
+
+range(comments$Difficulty, na.rm = TRUE) # 0-6
+mean(comments$Difficulty, na.rm = TRUE) # 3.53
+sd(comments$Difficulty, na.rm = TRUE) # 1.46
+median(comments$Difficulty, na.rm = TRUE) # 4 - so fairly difficult
+
+```
+

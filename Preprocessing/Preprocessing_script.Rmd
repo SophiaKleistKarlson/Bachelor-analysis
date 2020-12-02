@@ -8,11 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-
+# load necesary packages through pacman
 pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
 
+# set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
+# RStudio version
 RStudio.Version()
 ```
 
@@ -20,22 +22,22 @@ RStudio.Version()
 
 Extracting the session data from the drawing memory experiment
 ```{r}
-
-#specifying data path
+# specifying data path
 data_path <- 'data/data' 
 
-#creating a list of files
+# creating a list of files
 list_files <- list.files(path = data_path,
                          recursive = T,
                          pattern = "session.json$",
                          full.names = T)
 
+# look at the list of files
 list_files
+length(list_files)
 
 # empty dataframe 
 all_data <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
 
-length(list_files)
 
 
 # function that shifts one column one row up

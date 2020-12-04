@@ -34,29 +34,29 @@ I chose to make two barplots with the standard error as errorbars. Each plot sho
 #all_data_w_all_conv_source <- read.csv("data/csv_files/all_data_w_all_conv_source.csv")
 
 # check classes of the variables of interest
-class(all_data_w_all_conv_source$Condition)
-class(all_data_w_all_conv_source$Generation)
-class(all_data_w_all_conv_source$Conventionality)
-class(all_data_w_all_conv_source$Complexity)
+class(data$Condition)
+class(data$Generation)
+class(data$Conventionality)
+class(data$Complexity)
 
 # change class for generation and condition to factor, and complexity and conventionality to numeric
-all_data_w_all_conv_source$Condition <- as.factor(all_data_w_all_conv_source$Condition)
-all_data_w_all_conv_source$Generation <- as.factor(all_data_w_all_conv_source$Generation)
-all_data_w_all_conv_source$Conventionality <- as.numeric(all_data_w_all_conv_source$Conventionality)
-all_data_w_all_conv_source$Complexity <- as.numeric(all_data_w_all_conv_source$Complexity)
+data$Condition <- as.factor(data$Condition)
+data$Generation <- as.factor(data$Generation)
+data$Conventionality <- as.numeric(data$Conventionality)
+data$Complexity <- as.numeric(data$Complexity)
 
 # check range, mean and sd of conventionality and complexity
-range(all_data_w_all_conv_source$Conventionality) # 0-10
-mean(all_data_w_all_conv_source$Conventionality) # 4.33
-sd(all_data_w_all_conv_source$Conventionality) # 2.80
+range(data$Conventionality) # 0-10
+mean(data$Conventionality) # 4.33
+sd(data$Conventionality) # 2.80
 
-range(all_data_w_all_conv_source$Complexity) # 4287-50067
-mean(all_data_w_all_conv_source$Complexity) # 24641.25
-sd(all_data_w_all_conv_source$Complexity) # 6399.96
+range(data$Complexity) # 4287-50067
+mean(data$Complexity) # 24641.25
+sd(data$Complexity) # 6399.96
 
 
 # plotting complexity 
-complexity_plot <- ggplot(all_data_w_all_conv_source, aes(Generation, Complexity, fill = Condition)) +
+complexity_plot <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of complexity") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
@@ -64,12 +64,32 @@ complexity_plot <- ggplot(all_data_w_all_conv_source, aes(Generation, Complexity
 complexity_plot
 
 # plotting conventionality 
-conventionality_plot <- ggplot(all_data_w_all_conv_source, aes(Generation, Conventionality, fill = Condition)) +
+conventionality_plot <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of conventionality") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
 
 conventionality_plot
+
+
+# plotting complexity across chains
+complexity_plot <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of complexity") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
+  facet_wrap(data$Chain)
+
+complexity_plot
+
+# plotting conventionality across chains
+conventionality_plot <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of conventionality") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
+  facet_wrap(data$Chain)
+
+conventionality_plot
+
 
 ```
 

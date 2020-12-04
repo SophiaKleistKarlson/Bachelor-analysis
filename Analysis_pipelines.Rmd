@@ -141,8 +141,8 @@ set.seed(555)
 
 # Define the model
 complexity_mod <- bf(Complexity ~ 1 + Condition + Generation + Condition:Generation + 
-                       (1 + Condition + Generation + Condition:Generation | Subject:Chain)) #+
-                       #(1 + Condition + Generation + Condition:Generation | Source_image))
+                       #(1 + Condition + Generation + Condition:Generation | Subject:Chain)) #+
+                       (1 + Condition + Generation + Condition:Generation | Source_image))
 
 
 # Figure out what priors we'll need

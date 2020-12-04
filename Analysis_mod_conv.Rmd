@@ -5,23 +5,22 @@ date: "20 nov 2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 Mod 2: conventionality
 
 
 ```{r}
-
+# set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
+
+# load necesary packages through pacman
 pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
 
+# RStudio version
 RStudio.Version()
 
+# read data and delete the first unnecessary column
 data_conv <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") #we use all_data_w_all_conv_source.csv
-data_conv$X1 <- NULL#removing the first unnecessary column
+data_conv$X1 <- NULL
 
 ```
 
@@ -54,243 +53,6 @@ df_conventionality <- data_conv %>% select(Subject, Chain, Generation, Condition
 ```
 
 
-
-```{r}
-
-gen_0_cond_1 <- df_conventionality %>% subset(Generation == 0 & Condition == 1)
-mean(gen_0_cond_1$Conventionality)
-sd(gen_0_cond_1$Conventionality)
-
-gen_0_cond_2 <- df_conventionality %>% subset(Generation == 0 & Condition == 2)
-mean(gen_0_cond_2$Conventionality)
-sd(gen_0_cond_2$Conventionality)
-
-gen_0_cond_3 <- df_conventionality %>% subset(Generation == 0 & Condition == 3)
-mean(gen_0_cond_3$Conventionality)
-sd(gen_0_cond_3$Conventionality)
-
-gen_0_cond_4 <- df_conventionality %>% subset(Generation == 0 & Condition == 4)
-mean(gen_0_cond_4$Conventionality)
-sd(gen_0_cond_4$Conventionality)
-
-
-gen_1_cond_1 <- df_conventionality %>% subset(Generation == 1 & Condition == 1)
-mean(gen_1_cond_1$Conventionality)
-sd(gen_1_cond_1$Conventionality)
-
-gen_1_cond_2 <- df_conventionality %>% subset(Generation == 1 & Condition == 2)
-mean(gen_1_cond_2$Conventionality)
-sd(gen_1_cond_2$Conventionality)
-
-gen_1_cond_3 <- df_conventionality %>% subset(Generation == 1 & Condition == 3)
-mean(gen_1_cond_3$Conventionality)
-sd(gen_1_cond_3$Conventionality)
-
-gen_1_cond_4 <- df_conventionality %>% subset(Generation == 1 & Condition == 4)
-mean(gen_1_cond_4$Conventionality)
-sd(gen_1_cond_4$Conventionality)
-```
-
-
-some plots
-```{r}
-
-p_load(ggplot2, tidyr, dplyr)
-
-class(df_conventionality$Condition)
-class(df_conventionality$Generation)
-class(df_conventionality$Conventionality)
-
-df_conventionality$Condition <- as.factor(df_conventionality$Condition)
-
-
-range(df_conventionality$Conventionality)
-mean(df_conventionality$Conventionality)#4.38
-sd(df_conventionality$Conventionality)#2.81
-
-# conditions and conventionality
-plot_simple_cond <- ggplot(df_conventionality, aes(Condition, Conventionality)) +
-                             #geom_smooth(method = lm)#
-  geom_jitter()#geom_bar(stat = "identity")
-plot_simple_cond
-
-# generation and conventionality
-plot_simple_gen <- ggplot(df_conventionality, aes(Generation, Conventionality)) +
-  geom_bar(stat = "identity")
-  #geom_smooth(method = lm)
-plot_simple_gen
-
-
-
-
-# generation, condition and conventionality
-class(df_conventionality$Condition)
-class(df_conventionality$Generation)
-class(df_conventionality$Conventionality)
-
-df_conventionality$Condition <- as.factor(df_conventionality$Condition)
-df_conventionality$Condition <- as.character(df_conventionality$Condition)
-df_conventionality$Condition <- as.numeric(df_conventionality$Condition)
-
-df_conventionality$Generation <- as.factor(df_conventionality$Generation)
-df_conventionality$Generation <- as.character(df_conventionality$Generation)
-df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
-
-
-
-
-
-# make dataset for plots where sd for complexity and convenionality for each condition in each generation is made into a seperate row
-sd(all_data_w_all_conv_source$Conventionality)
-
-
-SD <- all_data_w_all_conv_source %>% group_by(Generation, Condition) %>% mutate(SD_compl = sd(Complexity), SD_conv = sd(Conventionality)) %>% select(Chain, Generation, Condition, Complexity, Conventionality, SD_compl, SD_conv)
-
-SD %>%
-    group_by(Generation, Condition) %>%
-    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality)) %>%
-    ggplot(aes(Generation, conv.mean, fill = Condition)) +
-    geom_col(position = position_dodge(width = 0.8)) +
-    geom_errorbar(
-        aes(ymin = conv.mean - conv.sd, ymax = conv.mean + conv.sd),
-        position = position_dodge(width = 0.8),
-        width = 0.2)
-
-SD_chain <- SD %>% 
-    group_by(Generation, Condition, Chain) %>%
-    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
-              conv.se = sd(Conventionality)/sqrt(16), 
-              comp.mean = mean(Complexity), comp.sd = sd(Complexity), 
-              comp.se = sd(Complexity)/sqrt(16)) 
-
-
-SD_1 <- all_data_w_all_conv_source %>% 
-    group_by(Generation, Condition) %>%
-    summarise(conv.mean = mean(Conventionality), conv.sd = sd(Conventionality), 
-              conv.se = sd(Conventionality)/sqrt(320),
-              comp.mean = mean(Complexity), comp.sd = sd(Complexity), 
-              comp.se = sd(Complexity)/sqrt(320)) 
-
-
-ggplot(SD_chain, aes(Generation, conv.mean, fill = Condition)) +
-    geom_col(position = position_dodge(width = 0.8)) +
-    geom_errorbar(
-        aes(ymin = conv.mean - conv.se, ymax = conv.mean + conv.se),
-        position = position_dodge(width = 0.8),
-        width = 0.2) +
-    facet_wrap(SD_chain$Chain)
-
-ggplot(SD_1, aes(Generation, conv.mean, fill = Condition)) +
-    geom_col(position = position_dodge(width = 0.8)) +
-    geom_errorbar(
-        aes(ymin = conv.mean - conv.se, ymax = conv.mean + conv.se),
-        position = position_dodge(width = 0.8),
-        width = 0.2)
-
-
-ggplot(SD_chain, aes(Generation, comp.mean, fill = Condition)) +
-    geom_col(position = position_dodge(width = 0.8)) +
-    geom_errorbar(
-        aes(ymin = comp.mean - comp.se, ymax = comp.mean + comp.se),
-        position = position_dodge(width = 0.8),
-        width = 0.2) +
-    facet_wrap(SD_chain$Chain)
-
-ggplot(SD_1, aes(Generation, comp.mean, fill = Condition)) +
-    geom_col(position = position_dodge(width = 0.8)) +
-    geom_errorbar(
-        aes(ymin = comp.mean - comp.se, ymax = comp.mean + comp.se),
-        position = position_dodge(width = 0.8),
-        width = 0.2)
-
-
-plot_simple_gen_cond <- ggplot(SD, aes(Generation, Conventionality, fill = Condition)) +
-  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
-  ggtitle("Evolution of conventionality") +
-  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
-
-plot_simple_gen_cond
-
-
-plot_simple_gen_cond_chain <- ggplot(df_conventionality, aes(Generation, Conventionality, fill = Condition)) +
-  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
-  ggtitle("Evolution of conventionality") +
-  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
-  facet_wrap(df_conventionality$Chain)
-
-plot_simple_gen_cond_chain
-
-
-
-
-plot_simple_compl <- ggplot(SD, aes(Generation, Complexity, fill = Condition)) +
-  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
-  ggtitle("Evolution of complexity") +
-  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
-
-plot_simple_compl
-
-
-
-plot_simple_compl_chain <- ggplot(all_data_w_all_conv_source, aes(Generation, Complexity, fill = Condition)) +
-  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
-  ggtitle("Evolution of complexity") +
-  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
-  facet_wrap(all_data_w_all_conv_source$Chain)
-
-plot_simple_compl_chain
-
-
-
-# Error bars represent standard error of the mean
-ggplot(df_conventionality, aes(x=Generation, y=Conventionality, fill=Condition)) + 
-    geom_bar(position=position_dodge(), stat="identity") +
-    geom_errorbar(aes(ymin=Conventionality-se, ymax=Conventionality+se),
-                  width=.2,                    # Width of the error bars
-                  position=position_dodge(.9))
-
-df_conventionality$Generation <- as.factor(df_conventionality$Generation)
-
-
-
-
-
-
-plot_simple_gen_cond1 <- ggplot(subset(df_conventionality, Condition == 1), aes(Generation, Conventionality)) +
-                             geom_col()#geom_bar(stat = "identity")
-  
-plot_simple_gen_cond1
-
-plot_simple_gen_cond2 <- ggplot(subset(df_conventionality, Condition == 2), aes(Generation, Conventionality)) +
-                             geom_bar(stat = "identity")
-plot_simple_gen_cond2
-
-plot_simple_gen_cond3 <- ggplot(subset(df_conventionality, Condition == 3), aes(Generation, Conventionality)) +
-                             geom_bar(stat = "identity")
-plot_simple_gen_cond3
-
-
-plot_simple_gen_cond4 <- ggplot(subset(df_conventionality, Condition == 4), aes(Generation, Conventionality)) +
-                             geom_bar(stat = "identity")
-plot_simple_gen_cond4
-
-
-
-
-# source image and conventionality
-plot_simple_gen_source <- ggplot(df_conventionality, aes(Source_image, Conventionality)) +
-  geom_bar(stat = "identity")# +
-  #geom_errorbar(aes(ymin=(Complexity-sd(Complexity)), ymax=(Complexity-sd(Complexity))), width=.2, position=position_dodge(.9))
-plot_simple_gen_source
-
-# participant and conventionality
-plot_simple_subj <- ggplot(df_conventionality, aes(Subject, Conventionality)) +
-                            geom_jitter()#geom_bar(stat = "identity")
-plot_simple_subj
-
-```
-
-
 Ideal model: 
 
 Complexity ~ 1 + Condition*Generation +
@@ -299,62 +61,23 @@ Complexity ~ 1 + Condition*Generation +
   (1 + condition*generation | Chain)
 
 
-simple model, with no bayesian fansy
-```{r}
-pacman::p_load(lmerTest, ggplot2)
-
-simple_mod_conv_1 <- lm(Conventionality ~ 1 + Condition, df_conventionality)
-summary(simple_mod_conv_1)
-
-simple_mod_conv_2 <- lm(Conventionality ~ 1 + Generation, df_conventionality)
-summary(simple_mod_conv_2) # there is a small rise in conventionality through generations across conditions
-
-simple_mod_conv_3 <- lm(Conventionality ~ 1 + Generation*Condition, df_conventionality)
-summary(simple_mod_conv_3) # I'm a bit confused by these results
-
-
-simple_mod_conv_4 <- lmerTest::lmer(Conventionality ~ 1 + Condition + (1 + Condition | Subject), df_conventionality) # failed to converge
-summary(simple_mod_conv_4)
-
-simple_mod_conv_5 <- lmerTest::lmer(Conventionality ~ 1 + Generation + (1 + Generation | Subject), df_conventionality)# boundary singular fit and failed to converge
-summary(simple_mod_conv_5)
-
-
-simple_mod_conv_6 <- lmerTest::lmer(Conventionality ~ 1 + Condition + Generation + 
-                       (1 + Condition + Generation | Subject), df_conventionality)
-summary(simple_mod_conv_6)
-
-simple_mod_conv_7 <- lmerTest::lmer(Conventionality ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_conventionality)
-summary(simple_mod_conv_7)
-```
-
-lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
-     start = NULL, verbose = 0L, subset, weights, na.action,
-     offset, contrasts = NULL, devFunOnly = FALSE)
-
-mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
-summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.
-
-
-
-
 
 Modeling
 ```{r}
 
-class(df_conventionality$Generation)
-
-df_conventionality$Generation <- as.character(df_conventionality$Generation)
-df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
+#class(df_conventionality$Generation)
+#df_conventionality$Generation <- as.character(df_conventionality$Generation)
+#df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
 
 # Set seed so that the analysis can be re-run and give the same results
 set.seed(555)
 
 
 # Define the model
-convention_mod <- bf(Conventionality ~ 1 + Generation + Condition + Generation:Condition + 
-                       (1 + Generation + Condition + Generation:Condition | Subject:Chain)+
-                       (1 + Generation + Condition + Generation:Condition | Source_image))
+convention_mod <- bf(Conventionality ~ 0 + mo(Generation) + Condition + mo(Generation):Condition + 
+                       (0 + Condition | gr(Subject, by=Generation)))#by=gr(mo(Generation, by=Chain))))+
+                       #(0 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
+
 
 
 # Figure out what priors we'll need
@@ -377,13 +100,23 @@ sd(df_source$conv_mean)# 0.3502272, half of this = 0.1751136
 # setting priors
 prior_convention_mod <- c(
   prior(normal(4.33, 2.80),     class = b), #mean and sd of Conventionality
-  prior(normal(4.33, 2.80),     class = Intercept), #mean and sd of Conventionality
   prior(normal(2.80, 1.40),     class = sigma), #mean: sd of Conventionality. sigma: half of the sd of Conventionality
   
   prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
-  prior(normal(0, 0.15),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
+  #prior(normal(0, 0.15),        class = sd),
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                               
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
+  prior(dirichlet(rep(1, 7)),   class = simo,  coef = moGeneration1),
+
+
+#mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
+  #prior(dirichlet(rep(1, 7)),        class = simo)# mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
   
-  #prior(normal(0, 0.18),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
+  prior(normal(0, 0.18),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
+
+
+  #prior(normal(4.33, 2.80),     class = Intercept) #mean and sd of Conventionality
   
 )
 

@@ -1,0 +1,482 @@
+---
+title: "Preprocessing complexity and conventionality"
+author: "Sophia Kleist Karlson"
+date: "22 nov 2020"
+output: html_document
+---
+
+NB:
+BEFORE RUNNING THIS SCRIPT, RUN THE R PREPROCESSING SCRIPT AND THE PYTHON IMAGE PROCESSING SCRIPT, WHICH CREATES THE COMPLEXITY_COMPARISON.CSV THAT IS USED BELOW
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+# load necesary packages through pacman
+pacman::p_load(tidyverse, jsonlite, rjson, stringr, dplyr)
+
+# set working directory
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+# RStudio version
+RStudio.Version()
+
+
+# read the cleaned_data.csv that was made in the R_preprocessing script
+all_data <- read.csv("data/csv_files/cleaned_data.csv")
+#delete the first unnecessary column
+all_data$X <- NULL
+
+# read complexity data and delete the first unnecessary column
+complexity_data <- read.csv("data/csv_files/complexity_comparison.csv")
+complexity_data$X <- NULL
+```
+
+
+
+Comparing complexity of orignal and blurred images
+```{r}
+#check class of complexity measures - they need to be numeric
+class(complexity_data$Complexity_original)
+class(complexity_data$Complexity_convolution)
+
+complexity_data$Complexity_original <- as.numeric(complexity_data$Complexity_original)
+complexity_data$Complexity_convolution <- as.numeric(complexity_data$Complexity_convolution)
+
+
+# make a column with the ratio of complexity between the blurred and original images
+complexity_data <- complexity_data %>% mutate(ratio = Complexity_convolution/Complexity_original)
+range(complexity_data$ratio)
+
+# correlation between the ratio and the comlexity of orignals
+cor(complexity_data$ratio, complexity_data$Complexity_original) #-0.1768 - pretty weak correlation, but still there
+cor(complexity_data$ratio, complexity_data$Complexity_convolution) # -0.1259 - even weaker
+```
+
+
+
+Merge complexity dataframe with all_data
+```{r}
+# I call it all_data_2
+all_data_2 <- merge(all_data, complexity_data)
+
+# rename complexity_convolution to just complexity
+all_data_2$Complexity <- all_data_2$Complexity_convolution
+all_data_2$Complexity_convolution <- NULL
+
+# write csv file with complexity scores
+write.csv(all_data_2, "data/csv_files/data_w_complexity.csv")
+```
+
+
+
+Conventionality
+
+Importing conventionality data round 1
+```{r}
+
+# specifying data path
+data_path_m <- 'data/mturk/round_1' 
+
+# creating a list of files
+list_files_m <- list.files(path = data_path_m,
+                         recursive = T,
+                         pattern = "session.json$",
+                         full.names = T)
+
+# look at the list of files
+list_files_m
+length(list_files_m)
+
+# empty data frame 
+all_data_m <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+
+# extract all mturk files and put them into the empty all_data_m
+for (i in 1:length(list_files_m)){
+  file_path_m <- list_files_m[i]
+  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
+    select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m) == 0){
+    all_data_m <- d_m
+  } else {
+    all_data_m <- rbind(all_data_m, d_m)
+  }
+}
+
+
+# look at class of contentionality and make it numeric
+class(all_data_m$Conventionality)
+all_data_m$Conventionality <- as.numeric(all_data_m$Conventionality)
+
+# now look at mean, sd and range
+mean(all_data_m$Conventionality)
+sd(all_data_m$Conventionality)
+range(all_data_m$Conventionality)
+
+# list of completion codes (from the Mturk workers)
+completion_codes <- all_data_m$completion_code 
+completion_codes <- completion_codes[complete.cases(completion_codes)]
+```
+
+
+
+Importing conventionality data from round 2
+```{r}
+# specifying data path
+data_path_m_2 <- 'data/mturk/round_2' 
+
+# creating a list of files
+list_files_m_2 <- list.files(path = data_path_m_2,
+                         recursive = T,
+                         pattern = "session.json$",
+                         full.names = T)
+
+# look at the list of files
+list_files_m_2
+length(list_files_m_2)
+
+# empty data frame
+all_data_m_2 <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+
+# extract all mturk files and put them into the empty all_data_m_2 
+for (i in 1:length(list_files_m_2)){
+  file_path_m_2 <- list_files_m_2[i]
+  d_m_2 <- jsonlite::fromJSON(file_path_m_2, flatten=T) %>% 
+    select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m_2) == 0){
+    all_data_m_2 <- d_m_2
+  } else {
+    all_data_m_2 <- rbind(all_data_m_2, d_m_2)
+  }
+}
+
+# look at class of contentionality and make it numeric
+class(all_data_m_2$Conventionality)
+all_data_m_2$Conventionality <- as.numeric(all_data_m_2$Conventionality)
+
+# now look at mean, sd and range
+mean(all_data_m_2$Conventionality)
+sd(all_data_m_2$Conventionality)
+range(all_data_m_2$Conventionality)
+
+# completion codes for round 2
+completion_codes_2 <- all_data_m_2$completion_code 
+completion_codes_2 <- completion_codes_2[complete.cases(completion_codes_2)]
+
+# rbind conventionality 1 and conventionality 2 scores
+all_conventionality <- rbind(all_data_m_2, all_data_m)
+all_conventionality$completion_code <- NULL
+```
+
+
+Write csv's
+```{r}
+write.csv(all_conventionality, "data/csv_files/all_conventionalty.csv") # all conventionality scores
+write.csv(completion_codes, "data/csv_files/completion_codes.csv") # completion codes
+write.csv(completion_codes_2, "data/csv_files/completion_codes_2.csv") # completion codes 2
+```
+
+
+
+Make rows for source images for each chain - we use all_data_2
+```{r}
+# make new dataframe from all_data_2
+all_data_w_source <- all_data_2
+
+# add 240 empty rows to be filled with source images in the beginning of each chain
+all_data_w_source[nrow(all_data_w_source)+240,] <- NA
+
+# check classes and make them into numeric if necesarry
+class(all_data_w_source$Generation)
+class(all_data_w_source$Condition)
+class(all_data_w_source$Chain)
+class(all_data_w_source$Source_image)
+class(all_data_w_source$Complexity)
+
+all_data_w_source$Generation <- as.numeric(all_data_w_source$Generation)
+all_data_w_source$Condition <- as.numeric(all_data_w_source$Condition)
+all_data_w_source$Chain <- as.numeric(all_data_w_source$Chain)
+all_data_w_source$Source_image <- as.numeric(all_data_w_source$Source_image)
+all_data_w_source$Complexity <- as.numeric(all_data_w_source$Complexity)
+
+# make every generation 1 higher
+all_data_w_source <- all_data_w_source %>% mutate(Generation = Generation +1)
+
+
+# read csv with complexity of source images
+source_comp <- read.csv("data/source_images/complexity/complexity_comparison_source.csv")
+source_comp$X <- NULL
+
+# add generation column which is 0
+source_comp$Generation <- rep(0,12)
+
+# add source image column, which is just the drawing id without "stim_"
+source_comp <- source_comp %>% mutate(Source_image = str_replace_all(Drawing_ID, 'stim_', ''))
+
+
+# check classes and make generation, source_image and complexity columns numeric
+class(source_comp$Generation)
+class(source_comp$Complexity_original)
+class(source_comp$Complexity_convolution)
+class(source_comp$Source_image)
+
+source_comp$Generation <- as.numeric(source_comp$Generation)
+source_comp$Complexity_original <- as.numeric(source_comp$Complexity_original)
+source_comp$Complexity_convolution <- as.numeric(source_comp$Complexity_convolution)
+source_comp$Source_image <- as.numeric(source_comp$Source_image)
+
+# make drawing id into character for both datasets
+class(source_comp$Drawing_ID)
+source_comp$Drawing_ID <- as.character(source_comp$Drawing_ID)
+
+class(all_data_w_source$Drawing_ID)
+all_data_w_source$Drawing_ID <- as.character(all_data_w_source$Drawing_ID)
+
+# add columns from source_comp to all_data_w_source
+all_data_w_source[1681:1692,1] <- source_comp$Drawing_ID
+all_data_w_source[1681:1692,7] <- source_comp$Generation
+all_data_w_source[1681:1692,9] <- source_comp$Source_image
+all_data_w_source[1681:1692,15] <- source_comp$Complexity_original
+all_data_w_source[1681:1692,17] <- source_comp$Complexity_convolution
+
+# add chain id (in this case we say that it's for chain 0)
+all_data_w_source[1681:1692,6] <- rep(0,12)
+
+# Now we take the next 12 rows and make them equal to the last 12 (that also contains source drawings).
+all_data_w_source[1693:1704,] <- all_data_w_source[1681:1692,]
+
+# column 6 represents the chain id
+all_data_w_source[1693:1704,6] <- rep(12,12) # chain 12
+
+# We do this to all new batches of generation 0 source image rows. Not very tidy, but it works
+all_data_w_source[1705:1716,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1705:1716,6] <- rep(13,12) # chain 13
+
+all_data_w_source[1717:1728,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1717:1728,6] <- rep(14,12) # chain 14
+
+all_data_w_source[1729:1740,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1729:1740,6] <- rep(15,12) # chain 15
+                  
+all_data_w_source[1741:1752,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1741:1752,6] <- rep(16,12)
+
+all_data_w_source[1753:1764,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1753:1764,6] <- rep(17,12)
+
+all_data_w_source[1765:1776,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1765:1776,6] <- rep(18,12)
+
+all_data_w_source[1777:1788,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1777:1788,6] <- rep(19,12)
+
+all_data_w_source[1789:1800,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1789:1800,6] <- rep(2,12)
+
+all_data_w_source[1801:1812,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1801:1812,6] <- rep(20,12)
+
+all_data_w_source[1813:1824,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1813:1824,6] <- rep(21,12)
+
+all_data_w_source[1825:1836,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1825:1836,6] <- rep(22,12)
+
+all_data_w_source[1837:1848,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1837:1848,6] <- rep(23,12)
+
+all_data_w_source[1849:1860,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1849:1860,6] <- rep(3,12)
+
+all_data_w_source[1861:1872,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1861:1872,6] <- rep(4,12)
+
+all_data_w_source[1873:1884,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1873:1884,6] <- rep(5,12)
+
+all_data_w_source[1885:1896,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1885:1896,6] <- rep(7,12)
+
+all_data_w_source[1897:1908,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1897:1908,6] <- rep(8,12)
+
+all_data_w_source[1909:1920,] <- all_data_w_source[1681:1692,]
+all_data_w_source[1909:1920,6] <- rep(9,12)
+
+# check class of Subjeft and make it into character
+class(all_data_w_source$Subject)
+all_data_w_source$Subject <- as.character(all_data_w_source$Subject)
+
+# check that drawing_id is numeric
+class(all_data_w_source$Drawing_ID)
+        
+          
+# loop that inserts the correct condition and source_image ID of the rest of the chain to each of the new generation 0 rows, and inserts a new Subject ID (here just the same number as the chain)   
+
+for (i in 1:1920){# i represents all the rows in the dataframe
+  for (c in 0:23){# c represents each of the 20 chains (their ID's goes from 0-23 because of missing chains)
+    for (s in 1:12){# s represents each of the 12 source images
+      # below: if row i of column 3 (Chain) is equal to c, and row i of column 4 (generation) is 0 and column 6 (source image) is s
+      if (all_data_w_source[i, 6] == c & all_data_w_source[i, 7] == 0 & all_data_w_source[i, 9] == s){
+        # below: then take make the condition of row i (column 5) the same as the condition of row j and the same with subject ID (column 2)
+        for (j in 1:1920){ # j represents the same row as i but exactly one generation above it
+          if (all_data_w_source[j, 6] == c & all_data_w_source[j, 7] == 1 & all_data_w_source[j, 9] == s){
+            all_data_w_source[i, 8] <- all_data_w_source[j, 8]
+            all_data_w_source[i, 2] <- c# "source_image" #if we want all the gen 0 to have the same subject id
+          }
+        }
+      }
+    }
+  }
+}
+
+```
+
+
+Merge dataframes and save csv's
+```{r}
+# merge conventionality data with the dataset containing source images as gen 0 for each chain
+all_data_w_all_conv_source <- merge(all_conventionality, all_data_w_source)
+
+# write csv
+write.csv(all_data_w_all_conv_source, "data/csv_files/all_data_w_all_conv_source.csv")
+
+
+
+# NB: the one bellow is without complexity and conventionality scores of the source images!
+
+# merge conventionality scores with all_data_2
+all_data_w_conv_comp <- merge(all_conventionality, all_data_2)
+
+# delete the completion code column
+all_data_w_conv_comp$completion_code <- NULL 
+
+# write csv of all data with conventionality and complexity scores but without source images as generation 0
+write.csv(all_data_w_conv_comp, "data/csv_files/all_data_w_conv_comp.csv") 
+```
+
+
+
+
+Plotting 
+
+I chose to make two barplots with the standard error as errorbars. Each plot shows the generation on the x-axis (from 0-7, 0 being the source images) and either the complexity or conventionality scores on the y-axis. For each generation, four bars represent each condition, color-coded as shown in the legend to the right of the plot.
+
+```{r}
+
+# Read data into R if you have cleaned the environment
+#all_data_w_all_conv_source <- read.csv("data/csv_files/all_data_w_all_conv_source.csv")
+
+# check classes of the variables of interest
+class(all_data_w_all_conv_source$Condition)
+class(all_data_w_all_conv_source$Generation)
+class(all_data_w_all_conv_source$Conventionality)
+class(all_data_w_all_conv_source$Complexity)
+
+# change class for generation and condition to factor, and complexity and conventionality to numeric
+all_data_w_all_conv_source$Condition <- as.factor(all_data_w_all_conv_source$Condition)
+all_data_w_all_conv_source$Generation <- as.factor(all_data_w_all_conv_source$Generation)
+all_data_w_all_conv_source$Conventionality <- as.numeric(all_data_w_all_conv_source$Conventionality)
+all_data_w_all_conv_source$Complexity <- as.numeric(all_data_w_all_conv_source$Complexity)
+
+# check range, mean and sd of conventionality and complexity
+range(all_data_w_all_conv_source$Conventionality) # 0-10
+mean(all_data_w_all_conv_source$Conventionality) # 4.33
+sd(all_data_w_all_conv_source$Conventionality) # 2.80
+
+range(all_data_w_all_conv_source$Complexity) # 4287-50067
+mean(all_data_w_all_conv_source$Complexity) # 24641.25
+sd(all_data_w_all_conv_source$Complexity) # 6399.96
+
+
+# plotting complexity 
+complexity_plot <- ggplot(all_data_w_all_conv_source, aes(Generation, Complexity, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of complexity") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
+
+complexity_plot
+
+# plotting conventionality 
+conventionality_plot <- ggplot(all_data_w_all_conv_source, aes(Generation, Conventionality, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of conventionality") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
+
+conventionality_plot
+
+```
+
+
+
+
+looking at mean and sd of the data in different ways
+```{r}
+all_data_m1 <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
+
+for (i in 1:length(list_files_m)){
+  file_path_m <- list_files_m[i]
+  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
+    #select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m1) == 0){
+    all_data_m1 <- d_m
+  } else {
+    all_data_m1 <- rbind(all_data_m1, d_m)
+  }
+}
+
+all_data_m1$Conventionality <- as.numeric(all_data_m1$Conventionality)
+class(all_data_m1$Conventionality)
+
+
+# grouping by participant and looking at the last 35 images
+conv_last35 <- all_data_m1 %>% 
+  group_by(subject) %>%   
+  slice(tail(row_number(), 35)) %>% 
+  select(Conventionality, subject) %>% 
+  as.data.frame()
+
+mean(conv_last35$Conventionality) #4.606845 - so basically the same as the overall mean
+sd(conv_last35$Conventionality) #2.965397 - also basically the same - both mean and sd go up 0.1 but it doesn't seem problematic
+
+
+# grouping by participant
+conv_by_subject <- all_data_m1 %>% 
+  group_by(subject) %>%
+  select(Conventionality, subject) %>% 
+  summarise(mean(Conventionality), sd(Conventionality)) %>% 
+  as.data.frame()
+
+conv_by_subject
+
+range(conv_by_subject[,3]) #range of sd's of scores for each image goes from 0.6206257 to 3.9582781 - people are generally rating images higher than others are
+mean(conv_by_subject[,3]) # mean sd og each participant is 2.087293, so they each are relatively stable in their trend
+
+
+# grouping by image
+conv_by_image <- all_data_m1 %>% 
+  group_by(Drawing_ID) %>%   
+  select(Conventionality, Drawing_ID) %>% 
+  summarise(mean(Conventionality), sd(Conventionality)) %>% 
+  as.data.frame()
+
+
+conv_by_image <- conv_by_image[-c(1693), ] # deleitng the empty row (don't know where it came from, but it's all empty)
+
+range(conv_by_image[,3]) #range of sd's of scores for each image goes from 0.834523 to 4.274091 - so for some images, people are not agreeing, for others, they are 
+mean(conv_by_image[,3]) # mean sd of each image is 2.723376, so around the same as the overall sd
+
+```
+

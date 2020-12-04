@@ -1,0 +1,61 @@
+---
+title: "Other_models"
+author: "Sophia Kleist Karlson"
+date: "4 dec 2020"
+output: html_document
+---
+
+
+```{r}
+# set working directory
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+# load necesary packages through pacman
+pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
+
+# RStudio version
+RStudio.Version()
+
+# read data and delete the first unnecessary column
+data_conv <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") #we use all_data_w_all_conv_source.csv
+data_conv$X1 <- NULL
+
+```
+
+
+
+simple model, with no bayesian fansy
+```{r}
+pacman::p_load(lmerTest, ggplot2)
+
+simple_mod_conv_1 <- lm(Conventionality ~ 1 + Condition, df_conventionality)
+summary(simple_mod_conv_1)
+
+simple_mod_conv_2 <- lm(Conventionality ~ 1 + Generation, df_conventionality)
+summary(simple_mod_conv_2) # there is a small rise in conventionality through generations across conditions
+
+simple_mod_conv_3 <- lm(Conventionality ~ 1 + Generation*Condition, df_conventionality)
+summary(simple_mod_conv_3) # I'm a bit confused by these results
+
+
+simple_mod_conv_4 <- lmerTest::lmer(Conventionality ~ 1 + Condition + (1 + Condition | Subject), df_conventionality) # failed to converge
+summary(simple_mod_conv_4)
+
+simple_mod_conv_5 <- lmerTest::lmer(Conventionality ~ 1 + Generation + (1 + Generation | Subject), df_conventionality)# boundary singular fit and failed to converge
+summary(simple_mod_conv_5)
+
+
+simple_mod_conv_6 <- lmerTest::lmer(Conventionality ~ 1 + Condition + Generation + 
+                       (1 + Condition + Generation | Subject), df_conventionality)
+summary(simple_mod_conv_6)
+
+simple_mod_conv_7 <- lmerTest::lmer(Conventionality ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_conventionality)
+summary(simple_mod_conv_7)
+```
+
+lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
+     start = NULL, verbose = 0L, subset, weights, na.action,
+     offset, contrasts = NULL, devFunOnly = FALSE)
+
+mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
+summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.

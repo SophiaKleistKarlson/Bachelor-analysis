@@ -7,7 +7,6 @@ output: html_document
 
 Mod 2: conventionality
 
-
 ```{r}
 # set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
@@ -21,9 +20,7 @@ RStudio.Version()
 # read data and delete the first unnecessary column
 data_conv <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") #we use all_data_w_all_conv_source.csv
 data_conv$X1 <- NULL
-
 ```
-
 
 
 Preparing the data and checking stuff
@@ -109,19 +106,16 @@ prior_convention_mod <- c(
   prior(normal(1, 0.5),     class = sigma), #mean: sd of Conventionality. sigma: half of the sd of Conventionality # 2.80, 1.40
   
   prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
-  #prior(normal(0, 0.15),        class = sd),
-  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                             
+  
+  # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                 
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
   prior(dirichlet(rep(1, 7)),   class = simo,  coef = moGeneration1),
-
-
-#mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
-  #prior(dirichlet(rep(1, 7)),        class = simo)# mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
+ 
   
   prior(normal(0, 0.06),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
-
-
+  #prior(normal(0, 0.15),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
   #prior(normal(4.33, 2.80),     class = Intercept) #mean and sd of Conventionality
   
 )

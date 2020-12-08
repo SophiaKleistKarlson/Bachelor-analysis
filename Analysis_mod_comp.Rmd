@@ -5,22 +5,19 @@ date: "13 nov 2020"
 output: html_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
-
-
 ```{r}
+# set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
+# load necesary packages through pacman
 pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
 
-RStudio.Version() 
+# RStudio version
+RStudio.Version()
 
-data <- read_csv("data/csv_files/all_data_w_source.csv") # we use all_data_w_all_conv_source.csv
-
-data$X1 <- NULL # removing the first unnecessary column
-
+# read data and delete the first unnecessary columns
+data_comp <- read_csv("data/csv_files/all_data_w_source.csv") # we use all_data_w_all_conv_source.csv
+data_comp$X1 <- NULL
 ```
 
 
@@ -29,109 +26,28 @@ Preparing the data and checking stuff
 # Checking classes
 
 # Generation, complexity and confidence should be numeric
-class(data$Generation)
-class(data$Confidence)
-class(data$Complexity)
+class(data_comp$Generation)
+class(data_comp$Confidence)
+class(data_comp$Complexity)
 
 # Subject and Drawing ID should be character
-class(data$Subject)
-class(data$Drawing_ID)
+class(data_comp$Subject)
+class(data_comp$Drawing_ID)
 
 # Chain, condition and Source_image should be factors
-class(data$Chain)
-class(data$Condition)
-class(data$Source_image)
+class(data_comp$Chain)
+class(data_comp$Condition)
+class(data_comp$Source_image)
 
-data$Chain <- as.factor(data$Chain)
-data$Condition <- as.factor(data$Condition)
-data$Source_image <- as.factor(data$Source_image)
+data_comp$Chain <- as.factor(data_comp$Chain)
+data_comp$Condition <- as.factor(data_comp$Condition)
+data_comp$Source_image <- as.factor(data_comp$Source_image)
 
 
 # Chose the variables needed for the model
-df_complexity <- data %>% select(Subject, Chain, Generation, Condition, Source_image, Complexity)#, Drawing_ID
+df_complexity <- data_comp %>% select(Subject, Chain, Generation, Condition, Source_image, Complexity)#, Drawing_ID
 
 ```
-
-
-
-some plots
-```{r}
-# conditions and complexity
-plot_simple_cond <- ggplot(df_complexity, aes(Condition, Complexity)) +
-                             geom_bar(stat = "identity")
-plot_simple_cond
-
-# generation and complexity
-plot_simple_gen <- ggplot(df_complexity, aes(Generation, Complexity)) +
-  geom_bar(stat = "identity")
-  #geom_smooth(method = lm)
-plot_simple_gen
-
-# generation, condition and complexity
-plot_simple_gen_cond <- ggplot(df_complexity, aes(Generation, Complexity, color = Condition)) +
-                             geom_smooth(method = lm)
-plot_simple_gen_cond
-
-# source image and complexity
-plot_simple_gen_source <- ggplot(df_complexity, aes(Source_image, Complexity)) +
-  geom_bar(stat = "identity")# +
-  #geom_errorbar(aes(ymin=(Complexity-sd(Complexity)), ymax=(Complexity-sd(Complexity))), width=.2, position=position_dodge(.9))
-plot_simple_gen_source
-
-# participant and complexity
-plot_simple_subj <- ggplot(df_complexity, aes(Subject, Complexity)) +
-                            geom_point()#geom_bar(stat = "identity")
-plot_simple_subj
-
-```
-
-
-Ideal model: 
-
-Complexity ~ 1 + Condition*Generation +
-  (1 + condition*generation | Source_image) +
-  (1 + condition*generation | Subject:Chain) +
-  (1 + condition*generation | Chain)
-
-
-simple model, with no bayesian fansy
-```{r}
-pacman::p_load(lmerTest, ggplot2)
-
-simple_mod_1 <- lm(Complexity ~ 1 + Condition, df_complexity)
-summary(simple_mod_1)
-
-simple_mod_2 <- lm(Complexity ~ 1 + Generation, df_complexity)
-summary(simple_mod_2)
-
-simple_mod_3 <- lm(Complexity ~ 1 + Generation*Condition, df_complexity)
-summary(simple_mod_3)
-
-
-
-simple_mod_4 <- lmerTest::lmer(Complexity ~ 1 + Condition + (1 + Condition | Subject), df_complexity)
-summary(simple_mod_4)
-
-simple_mod_5 <- lmerTest::lmer(Complexity ~ 1 + Generation + (1 + Generation | Subject), df_complexity)
-summary(simple_mod_5)
-
-
-simple_mod_6 <- lmerTest::lmer(Complexity ~ 1 + Condition + Generation + 
-                       (1 + Condition + Generation | Subject), df_complexity)
-summary(simple_mod_6)
-
-simple_mod_7 <- lmerTest::lmer(Complexity ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_complexity)
-summary(simple_mod_7)
-```
-
-lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
-     start = NULL, verbose = 0L, subset, weights, na.action,
-     offset, contrasts = NULL, devFunOnly = FALSE)
-
-mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
-summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.
-
-
 
 
 Modeling
@@ -162,19 +78,17 @@ sd(df_part$compl_mean) #get the standard deviation of the mean complexity for ea
 
 
 prior_complexity_mod <- c(
-  prior(normal(0, 1),     class = b), #mean and sd of complexity #24641.25, 6401.52
-  prior(lkj(1),                        class = cor),
-  #prior(normal(24641.25, 6399.96),     class = Intercept), #mean and sd of complexity
-  prior(normal(1, 0.5),      class = sigma), #mean: sd of complexity sigma: half of the sd of complexity #6401.52, 3200.76
+  prior(normal(0, 1),           class = b), #mean and sd of complexity: 24641.25, 6401.52. z-scored: 0, 1
+  prior(normal(1, 0.5),         class = sigma), #mean: sd of complexity sigma: half of the sd of complexity: 6401.52, 3200.76. z-scored: 1, 0.5
+  prior(lkj(1),                 class = cor),# I choose lkj prior of 1 - WHY??
   
-  # simo priors for the monotonic generation variable
-  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                           
+  # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                 
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration1),
-
   
-  prior(normal(0, 0.25),            class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1579.648.
+  prior(normal(0, 0.25),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1579.648. Z-scored: 0, 0.25.
 )
 
 
@@ -200,11 +114,8 @@ complexity_mod1 <- brm(
   data = df_complexity,
   chains = 2,
   cores = 2,
-  #chains = 1,
-  #cores = 1, 
   sample_prior = T,
   iter = 4000,
-  #iter = 500,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )
 

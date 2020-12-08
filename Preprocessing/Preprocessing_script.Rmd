@@ -236,3 +236,43 @@ median(comments$Difficulty, na.rm = TRUE) # 4 - so fairly difficult
 
 ```
 
+
+Inpecting demographics
+```{r}
+all_data <- read.csv("data/csv_files/cleaned_data.csv")
+all_data$X <- NULL
+
+class(all_data$Age)
+
+mean(all_data$Age, na.rm = TRUE)
+
+demographics <- all_data %>% group_by(Subject) %>% filter(Source_image==1) %>% select(Gender, Age, Occupation)
+
+demographics$Gender
+sum(with(demographics, Gender=="Female")) # 85
+sum(with(demographics, Gender=="Male")) # 51
+sum(with(demographics, Gender=="Non-binary")) # 3
+sum(with(demographics, Gender=="Other/Prefer not to say")) # 1
+
+
+demographics$Age
+
+sum(with(demographics, Age=="Under 20")) # 5
+sum(with(demographics, Age=="20-29")) # 121
+sum(with(demographics, Age=="30-39")) # 9
+sum(with(demographics, Age=="40-49")) # 4
+sum(with(demographics, Age=="60-69")) # 1
+
+
+demographics$Occupation
+
+sum(with(demographics, Occupation=="Student at Linguistics")) # 3
+sum(with(demographics, Occupation=="Student at Cognitive Science")) # 14
+sum(with(demographics, Occupation=="Student at Semiotics")) # 3
+sum(with(demographics, Occupation=="Student at BSS")) # 44
+sum(with(demographics, Occupation=="Student elsewhere")) # 56
+sum(with(demographics, Occupation=="Employed")) # 10
+sum(with(demographics, Occupation=="Unemployed")) # 6
+sum(with(demographics, Occupation=="Other/Prefer not to say")) # 4
+```
+

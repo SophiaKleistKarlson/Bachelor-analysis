@@ -181,11 +181,11 @@ Modeling
 set.seed(555)
 
 # Define the model
-MSE_mod <- bf(MSE ~ 1 + Condition + Generation + Condition:Generation) #+ 
-                       #(1 + Condition + Generation + Condition:Generation | Subject)) #+
-                       #(1 + Condition + Generation + Condition:Generation | Source_image))
+MSE_mod <- bf(MSE ~ 1 + Condition + mo(Generation) + Condition:mo(Generation) + 
+                       (1 + Condition | gr(Subject, by = Chain)))
+                       #(1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
 
-
+df_MSE$MSE <- scale(df_MSE$MSE)
 # Figure out what priors we'll need
 get_prior(MSE_mod, family = gaussian, df_MSE)
 
@@ -200,11 +200,15 @@ sd(df_part$mean_MSE)/2 #get the standard deviation of the mean complexity for ea
 
 
 prior_MSE_mod <- c(
-  prior(normal(4.38, 2.81),     class = b), #mean and sd of Conventionality
-  #prior(lkj(1),                        class = cor),
-  prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of Conventionality
-  #prior(normal(0, 1390.23),            class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
-  prior(normal(2.81, 1.40),      class = sigma) #mean: sd of Conventionality. sigma: half of the sd of Conventionality
+  prior(normal(0, 1),     class = b), #mean and sd of MSE #4.38, 2.81
+  prior(lkj(1),                        class = cor),
+  #prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of MSE
+  prior(normal(0, 0.25),            class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(normal(1, 0.5),      class = sigma), #mean: sd of MSE sigma: half of the sd of MSE #2.81, 1.40
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition21),                           
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition31),             
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition41),            
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration1)
 )
 
 
@@ -213,7 +217,7 @@ MSE_mod0 <- brm(
   formula = MSE_mod, 
   prior = prior_MSE_mod,
   data = df_MSE,
-  chains = 2,
+  chains = 1,
   cores = 2,
   sample_prior = "only"
 )

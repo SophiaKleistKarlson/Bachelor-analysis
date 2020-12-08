@@ -66,7 +66,8 @@ Conventionality ~ 0 + Condition*Generation +
 Modeling
 ```{r}
 
-#class(df_conventionality$Generation)
+class(df_conventionality$Subject)
+df_conventionality$Subject <- as.factor(df_conventionality$Subject)
 #df_conventionality$Generation <- as.character(df_conventionality$Generation)
 #df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
 
@@ -74,10 +75,14 @@ Modeling
 set.seed(555)
 
 
-# Define the model
+# scaling conventionality to make it easier to deal with and interpret
+df_conventionality$Conventionality <- scale(df_conventionality$Conventionality)
+
+
+# Define the model - bf is short for brmsformula
 convention_mod <- bf(Conventionality ~ 0 + mo(Generation) + Condition + mo(Generation):Condition + 
-                       (0 + Condition | gr(mo(Generation, by=Chain))))  #gr(Subject, by=Generation)))
-                       #(0 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
+                       (1 + Condition | gr(Subject, by = Chain)) +
+                       (1 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
 
 
 
@@ -91,21 +96,21 @@ sd(df_conventionality$Conventionality)
 
 # For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
 df_subj <- df_conventionality %>% group_by(Subject) %>% summarize(conv_mean = mean(Conventionality)) #find mean complexity for each participant
-sd(df_subj$conv_mean)#get the standard deviation of the mean complexity for each participant (0.2970962). Divide this in two (0.1485481)
+sd(df_subj$conv_mean)#get the standard deviation of the mean complexity for each participant (0.2970962). Divide this in two (0.1485481) # scaled = 0.11, half = 0.06
 
 
 df_source <- df_conventionality %>% group_by(Source_image) %>% summarize(conv_mean = mean(Conventionality)) #find mean 
-sd(df_source$conv_mean)# 0.3502272, half of this = 0.1751136
+sd(df_source$conv_mean)# 0.3502272, half of this = 0.1751136 # scaled = 0.12, half = 0.06
 
 
 # setting priors
 prior_convention_mod <- c(
-  prior(normal(4.33, 2.80),     class = b), #mean and sd of Conventionality
-  prior(normal(2.80, 1.40),     class = sigma), #mean: sd of Conventionality. sigma: half of the sd of Conventionality
+  prior(normal(0, 1),     class = b), #mean and sd of Conventionality # 4.33, 2.80
+  prior(normal(1, 0.5),     class = sigma), #mean: sd of Conventionality. sigma: half of the sd of Conventionality # 2.80, 1.40
   
   prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
   #prior(normal(0, 0.15),        class = sd),
-  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                               
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                             
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
   prior(dirichlet(rep(1, 7)),   class = simo,  coef = moGeneration1),
@@ -114,7 +119,7 @@ prior_convention_mod <- c(
 #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each dubject = 0.30. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.15.
   #prior(dirichlet(rep(1, 7)),        class = simo)# mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
   
-  prior(normal(0, 0.18),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
+  prior(normal(0, 0.06),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean conv for each source image = 0.35. sigma should go from 0 (the mean of the prior) to around that -> sigma: 0.18.
 
 
   #prior(normal(4.33, 2.80),     class = Intercept) #mean and sd of Conventionality
@@ -142,11 +147,11 @@ convention_mod1 <- brm(
   formula = convention_mod, 
   prior = prior_convention_mod,
   data = df_conventionality,
-  chains = 1,#2,
-  cores = 1,#2,
+  chains = 2,
+  cores = 2,
   sample_prior = T,
   #iter = 2000,
-  iter = 500,#4000,
+  iter = 4000,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )
 
@@ -192,8 +197,10 @@ hypothesis(convention_mod1,"Condition4:Generation > 0") # this is more probable 
 plot(hypothesis(convention_mod1, "")) # After trying different hypotheses, this turned out to be the best
 
 
+class(convention_mod1) # "brmsfit"
+
 # Plot conditional effects
-conditional_effects(convention_mod1)
+conditional_effects(convention_mod1, effects = "Generation", conditions = make_conditions(convention_mod1, vars = "Condition"))
 ```
 
 

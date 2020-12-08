@@ -344,6 +344,9 @@ for (i in 1:1920){# i represents all the rows in the dataframe
 
 Merge dataframes and save csv's
 ```{r}
+# write csv with the data containing complexity and with source images as gen 0 for each chain
+write.csv(all_data_w_source, "data/csv_files/all_data_w_source.csv")
+
 # merge conventionality data with the dataset containing source images as gen 0 for each chain
 all_data_w_all_conv_source <- merge(all_conventionality, all_data_w_source)
 

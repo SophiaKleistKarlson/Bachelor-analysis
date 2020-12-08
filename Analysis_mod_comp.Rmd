@@ -17,7 +17,7 @@ pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
 
 RStudio.Version() 
 
-data <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") # we use all_data_w_all_conv_source.csv
+data <- read_csv("data/csv_files/all_data_w_source.csv") # we use all_data_w_all_conv_source.csv
 
 data$X1 <- NULL # removing the first unnecessary column
 
@@ -139,10 +139,13 @@ Modeling
 # Set seed so that the analysis can be re-run and give the same results
 set.seed(555)
 
+# scaling complexity to make it easier to deal with and interpret
+df_complexity$Complexity <- scale(df_complexity$Complexity)
+
 # Define the model
-complexity_mod <- bf(Complexity ~ 1 + Condition + Generation + Condition:Generation + 
-                       #(1 + Condition + Generation + Condition:Generation | Subject:Chain)) #+
-                       (1 + Condition + Generation + Condition:Generation | Source_image))
+complexity_mod <- bf(Complexity ~ 0 + Condition + mo(Generation) + Condition:mo(Generation) + 
+                       (1 + Condition | gr(Subject, by = Chain)) +
+                       (1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
 
 
 # Figure out what priors we'll need
@@ -155,16 +158,23 @@ sd(df_complexity$Complexity)
 
 # For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
 df_part <- df_complexity %>% group_by(Subject) %>% summarize(compl_mean = mean(Complexity)) #find mean complexity for each participant
-sd(df_part$compl_mean)/2 #get the standard deviation of the mean complexity for each participant. Divide this in two
+sd(df_part$compl_mean) #get the standard deviation of the mean complexity for each participant = 3159.295. Divide this in two = 1579.648.
 
 
 prior_complexity_mod <- c(
-  prior(normal(24641.25, 6399.96),     class = b), #mean and sd of complexity
-  prior(lkj(1),                         class = cor),
-  prior(normal(24641.25, 6399.96),     class = Intercept), #mean and sd of complexity
-  prior(normal(6399.96, 3199.98),     class = sigma), #mean: sd of complexity sigma: half of the sd of complexity
+  prior(normal(0, 1),     class = b), #mean and sd of complexity #24641.25, 6401.52
+  prior(lkj(1),                        class = cor),
+  #prior(normal(24641.25, 6399.96),     class = Intercept), #mean and sd of complexity
+  prior(normal(1, 0.5),      class = sigma), #mean: sd of complexity sigma: half of the sd of complexity #6401.52, 3200.76
   
-  prior(normal(0, 1428.93),            class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  # simo priors for the monotonic generation variable
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                           
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration1),
+
+  
+  prior(normal(0, 0.25),            class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1579.648.
 )
 
 
@@ -188,13 +198,13 @@ complexity_mod1 <- brm(
   formula = complexity_mod, 
   prior = prior_complexity_mod,
   data = df_complexity,
-  #chains = 2,
-  #cores = 2,
-  chains = 1,
-  cores = 1, 
+  chains = 2,
+  cores = 2,
+  #chains = 1,
+  #cores = 1, 
   sample_prior = T,
-  #iter = 4000,
-  iter = 500,
+  iter = 4000,
+  #iter = 500,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )
 
@@ -224,19 +234,36 @@ mcmc_rank_overlay(complexity_mod1,
   theme_classic()
 
 
+complexity_mod1
 
+# After trying different hypotheses, these turned out to be the ones with highest posterior probability
+hypothesis(complexity_mod1,"Condition1 > Condition2") 
+hypothesis(complexity_mod1,"Condition1 > Condition3")
+hypothesis(complexity_mod1,"Condition1 > Condition4")
 
-hypothesis(complexity_mod1,"Condition2 = Condition3") # Is condition 2 more complex than condition 3?
+hypothesis(complexity_mod1,"Condition2 = Condition3") 
 hypothesis(complexity_mod1,"Condition3 = Condition4")
 hypothesis(complexity_mod1,"Condition2 = Condition4")
 
-hypothesis(complexity_mod1,"Intercept > 0")
+# these don't work...
 hypothesis(complexity_mod1,"Generation < 0")
-hypothesis(complexity_mod1,"Condition2:Generation < 0")
+hypothesis(complexity_mod1,"Condition2:moGeneration < 0")
 hypothesis(complexity_mod1,"Condition3:Generation < 0")
 hypothesis(complexity_mod1,"Condition4:Generation < 0")
 
-plot(hypothesis(complexity_mod1, "")) # After trying different hypotheses, this turned out to be the best
+
+
+plot(hypothesis(complexity_mod1, "Condition1 > Condition2")) 
+plot(hypothesis(complexity_mod1, "Condition1 > Condition3")) 
+plot(hypothesis(complexity_mod1, "Condition1 > Condition4")) 
+
+plot(hypothesis(complexity_mod1,"Condition2 = Condition3"))
+plot(hypothesis(complexity_mod1,"Condition3 = Condition4"))
+plot(hypothesis(complexity_mod1,"Condition2 = Condition4"))
+
+
+plot(hypothesis(complexity_mod1, "moGeneration > 0")) 
+
 
 
 # Plot conditional effects

@@ -1,9 +1,12 @@
 ---
-title: "Analysis pipelines"
+title: "Model 1: Complexity"
 author: "Sophia Kleist Karlson"
 date: "13 nov 2020"
 output: html_document
 ---
+
+Model 1: Complexity
+
 
 ```{r}
 # set working directory
@@ -47,6 +50,9 @@ data_comp$Source_image <- as.factor(data_comp$Source_image)
 # Chose the variables needed for the model
 df_complexity <- data_comp %>% select(Subject, Chain, Generation, Condition, Source_image, Complexity)#, Drawing_ID
 
+# Z-score outcome variable to make it easier to deal with and interpret
+df_complexity$Complexity <- scale(df_complexity$Complexity)
+
 ```
 
 
@@ -54,9 +60,6 @@ Modeling
 ```{r}
 # Set seed so that the analysis can be re-run and give the same results
 set.seed(555)
-
-# scaling complexity to make it easier to deal with and interpret
-df_complexity$Complexity <- scale(df_complexity$Complexity)
 
 # Define the model
 complexity_mod <- bf(Complexity ~ 0 + Condition + mo(Generation) + Condition:mo(Generation) + 
@@ -67,14 +70,19 @@ complexity_mod <- bf(Complexity ~ 0 + Condition + mo(Generation) + Condition:mo(
 # Figure out what priors we'll need
 get_prior(complexity_mod, family = gaussian, df_complexity)
 
-# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta- and intercept-priors
+# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta-prior
 range(df_complexity$Complexity)
 mean(df_complexity$Complexity)
 sd(df_complexity$Complexity)
 
-# For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
+
+# For choosing the sd prior
 df_part <- df_complexity %>% group_by(Subject) %>% summarize(compl_mean = mean(Complexity)) #find mean complexity for each participant
-sd(df_part$compl_mean) #get the standard deviation of the mean complexity for each participant = 3159.295. Divide this in two = 1579.648.
+sd(df_part$compl_mean) #get the standard deviation of the mean complexity for each participant = 3159.295. Divide this in two = 1579.648. Scaled: 
+
+# do the same, but grouping by source image
+df_source <- df_complexity %>% group_by(Source_image) %>% summarize(mean_comp = mean(Complexity)) # find mean conventionality for each source image
+sd(df_source$mean_comp)/2 # scaled = , half = 
 
 
 prior_complexity_mod <- c(

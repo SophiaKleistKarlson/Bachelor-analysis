@@ -1,12 +1,12 @@
 ---
-title: "Analysis_mod_MSE"
+title: "Model 3: MSE"
 author: "Sophia Kleist Karlson"
 date: "22 nov 2020"
 output: html_document
 ---
 
+Model 3: Error between images
 
-Mod 3: Error between images
 
 ```{r}
 # set working directory
@@ -21,7 +21,6 @@ RStudio.Version()
 # read data and delete the first unnecessary columns
 data_MSE <- read_csv("data/csv_files/all_data_w_MSE.csv") #we use all_data_w_MSE.csv
 data_MSE$X1 <- NULL
-
 ```
 
 
@@ -50,6 +49,8 @@ data_MSE$Source_image <- as.factor(data_MSE$Source_image)
 # Chose the variables needed for the model
 df_MSE <- data_MSE %>% select(Subject, Chain, Generation, Condition, Source_image, MSE)
 
+# Z-score outcome variable to make it easier to deal with and interpret
+df_MSE$MSE <- scale(df_MSE$MSE)
 ```
 
 
@@ -63,18 +64,23 @@ MSE_mod <- bf(MSE ~ 1 + Condition + mo(Generation) + Condition:mo(Generation) +
                        (1 + Condition | gr(Subject, by = Chain)))
                        #(1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
 
-df_MSE$MSE <- scale(df_MSE$MSE)
 # Figure out what priors we'll need
 get_prior(MSE_mod, family = gaussian, df_MSE)
 
-# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta- and intercept-priors
+# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta-prior
 range(df_MSE$MSE)
 mean(df_MSE$MSE)
 sd(df_MSE$MSE)
 
-# For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
+
+# For choosing the sd prior
 df_part <- df_MSE %>% group_by(Subject) %>% summarize(mean_MSE = mean(MSE)) #find mean complexity for each participant
 sd(df_part$mean_MSE)/2 #get the standard deviation of the mean complexity for each participant. Divide this in two
+
+# do the same, but grouping by source image
+df_source <- df_MSE %>% group_by(Source_image) %>% summarize(MSE_mean = mean(MSE)) # find mean conventionality for each source image
+sd(df_source$MSE_mean)/2 # scaled = 0.12, half = 0.06
+
 
 
 prior_MSE_mod <- c(

@@ -1,11 +1,12 @@
 ---
-title: "Mod conventionality"
+title: "Model 2: conventionality"
 author: "Sophia Kleist Karlson"
 date: "20 nov 2020"
 output: html_document
 ---
 
-Mod 2: conventionality
+Model 2: conventionality
+
 
 ```{r}
 # set working directory
@@ -49,31 +50,15 @@ data_conv$Source_image <- as.factor(data_conv$Source_image)
 # Chose the variables needed for the model
 df_conventionality <- data_conv %>% select(Subject, Chain, Generation, Condition, Source_image, Conventionality)
 
+# Z-score outcome variable to make it easier to deal with and interpret
+df_conventionality$Conventionality <- scale(df_conventionality$Conventionality)
 ```
-
-
-Ideal model: 
-
-Conventionality ~ 0 + Condition*Generation +
-  (0 + Condition*Generation | Source_image) +
-  (0 + Condition*Generation | gr(Subject, by = c(Chain, Generation)))
-
 
 
 Modeling
 ```{r}
-
-class(df_conventionality$Subject)
-df_conventionality$Subject <- as.factor(df_conventionality$Subject)
-#df_conventionality$Generation <- as.character(df_conventionality$Generation)
-#df_conventionality$Generation <- as.numeric(df_conventionality$Generation)
-
 # Set seed so that the analysis can be re-run and give the same results
 set.seed(555)
-
-
-# scaling conventionality to make it easier to deal with and interpret
-df_conventionality$Conventionality <- scale(df_conventionality$Conventionality)
 
 
 # Define the model - bf is short for brmsformula
@@ -82,21 +67,21 @@ convention_mod <- bf(Conventionality ~ 0 + mo(Generation) + Condition + mo(Gener
                        (1 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
 
 
-
 # Figure out what priors we'll need
 get_prior(convention_mod, family = gaussian, df_conventionality)
 
-# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta- and intercept-priors
+# Checking range, mean and standard deviation of complexity, to determine which family to choose and to use for beta-prior
 range(df_conventionality$Conventionality)
 mean(df_conventionality$Conventionality)
 sd(df_conventionality$Conventionality)
 
-# For choosing the sd prior - GROUP BY DRAWING AND NOT SUBJECT???
-df_subj <- df_conventionality %>% group_by(Subject) %>% summarize(conv_mean = mean(Conventionality)) #find mean complexity for each participant
-sd(df_subj$conv_mean)#get the standard deviation of the mean complexity for each participant (0.2970962). Divide this in two (0.1485481) # scaled = 0.11, half = 0.06
 
+# For choosing the sd prior
+df_subj <- df_conventionality %>% group_by(Subject) %>% summarize(conv_mean = mean(Conventionality)) # find mean conventionality for each participant
+sd(df_subj$conv_mean)#get the standard deviation of the mean conventionality for each participant (0.2970962). Divide this in two (0.1485481) # scaled = 0.11, half = 0.06
 
-df_source <- df_conventionality %>% group_by(Source_image) %>% summarize(conv_mean = mean(Conventionality)) #find mean 
+# do the same, but grouping by source image
+df_source <- df_conventionality %>% group_by(Source_image) %>% summarize(conv_mean = mean(Conventionality)) # find mean conventionality for each source image
 sd(df_source$conv_mean)# 0.3502272, half of this = 0.1751136 # scaled = 0.12, half = 0.06
 
 

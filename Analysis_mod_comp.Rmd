@@ -12,8 +12,8 @@ Model 1: Complexity
 # set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
-# load necesary packages through pacman
-pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
+# load necessary packages through pacman
+pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr, bayesplot)
 
 # RStudio version
 RStudio.Version()
@@ -141,7 +141,7 @@ plot(complexity_mod1)
 
 # Rank trace plots
 mcmc_rank_overlay(complexity_mod1, 
-                  pars = c("b_Intercept", "b_Condition2", "b_Condition3", "b_Condition4")) + 
+                  pars = c("b_Condition2", "b_Condition3", "b_Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(complexity_mod1, 
@@ -153,7 +153,6 @@ mcmc_rank_overlay(complexity_mod1,
   theme_classic()
 
 
-complexity_mod1
 
 # After trying different hypotheses, these turned out to be the ones with highest posterior probability
 hypothesis(complexity_mod1,"Condition1 > Condition2") 
@@ -165,7 +164,7 @@ hypothesis(complexity_mod1,"Condition3 = Condition4")
 hypothesis(complexity_mod1,"Condition2 = Condition4")
 
 # these don't work...
-hypothesis(complexity_mod1,"Generation < 0")
+hypothesis(complexity_mod1,"moGeneration1 < 0")
 hypothesis(complexity_mod1,"Condition2:moGeneration < 0")
 hypothesis(complexity_mod1,"Condition3:Generation < 0")
 hypothesis(complexity_mod1,"Condition4:Generation < 0")

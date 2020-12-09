@@ -12,7 +12,7 @@ Model 2: conventionality
 # set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
-# load necesary packages through pacman
+# load necessary packages through pacman
 pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
 
 # RStudio version
@@ -62,10 +62,9 @@ set.seed(555)
 
 
 # Define the model - bf is short for brmsformula
-convention_mod <- bf(Conventionality ~ 0 + mo(Generation) + Condition + mo(Generation):Condition + 
+convention_mod <- bf(Conventionality ~ 0 + Condition + mo(Generation) + Condition:mo(Generation) + 
                        (1 + Condition | gr(Subject, by = Chain)) +
-                       (1 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
-
+                       (1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
 
 # Figure out what priors we'll need
 get_prior(convention_mod, family = gaussian, df_conventionality)
@@ -129,7 +128,6 @@ convention_mod1 <- brm(
   chains = 2,
   cores = 2,
   sample_prior = T,
-  #iter = 2000,
   iter = 4000,
   control = list(adapt_delta=0.99, max_treedepth=20)
 )

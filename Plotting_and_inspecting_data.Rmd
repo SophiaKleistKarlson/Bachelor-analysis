@@ -17,21 +17,20 @@ setwd("~/Social Transmission Study/Analysis of drawings/")
 
 # RStudio version
 RStudio.Version()
-
-# read data and delete the first unnecessary column
-data <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") #we use all_data_w_all_conv_source.csv
-data$X1 <- NULL
 ```
 
 
 Plotting 
 
-I chose to make two barplots with the standard error as errorbars. Each plot shows the generation on the x-axis (from 0-7, 0 being the source images) and either the complexity or conventionality scores on the y-axis. For each generation, four bars represent each condition, color-coded as shown in the legend to the right of the plot.
+Below: Bar plots with the standard error as error bars. Each plot shows the generation on the x-axis (from 0-7, 0 being the source images) and either the complexity or conventionality scores on the y-axis. For each generation, four bars represent each condition, color-coded as shown in the legend to the right of the plot.
 
+
+Complexity and conventionality
 ```{r}
+# read data and delete the first unnecessary column
+data <- read_csv("data/csv_files/all_data_w_all_conv_source.csv") #we use all_data_w_all_conv_source.csv
+data$X1 <- NULL
 
-# Read data into R if you have cleaned the environment
-#all_data_w_all_conv_source <- read.csv("data/csv_files/all_data_w_all_conv_source.csv")
 
 # check classes of the variables of interest
 class(data$Condition)
@@ -56,148 +55,99 @@ sd(data$Complexity) # 6399.96
 
 
 # plotting complexity 
-complexity_plot <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
+complexity_plot1 <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of complexity") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
-
-complexity_plot
+complexity_plot1
 
 # plotting conventionality 
-conventionality_plot <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
+conventionality_plot1 <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of conventionality") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
-
-conventionality_plot
+conventionality_plot1
 
 
 # plotting complexity across chains
-complexity_plot <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
+complexity_plot2 <- ggplot(data, aes(Generation, Complexity, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of complexity") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
   facet_wrap(data$Chain)
-
-complexity_plot
+complexity_plot2
 
 # plotting conventionality across chains
-conventionality_plot <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
+conventionality_plot2 <- ggplot(data, aes(Generation, Conventionality, fill = Condition)) +
   geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
   ggtitle("Development of conventionality") +
   stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
   facet_wrap(data$Chain)
-
-conventionality_plot
-
-
+conventionality_plot2
 ```
 
 
 
+MSE
 
-looking at mean and sd of the data in different ways
 ```{r}
-all_data_m1 <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
-
-for (i in 1:length(list_files_m)){
-  file_path_m <- list_files_m[i]
-  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
-    #select(drawing_id, button_pressed, completion_code) %>% 
-    rename(Drawing_ID = drawing_id,
-           Conventionality = button_pressed) %>% 
-    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
-  if (nrow(all_data_m1) == 0){
-    all_data_m1 <- d_m
-  } else {
-    all_data_m1 <- rbind(all_data_m1, d_m)
-  }
-}
-
-all_data_m1$Conventionality <- as.numeric(all_data_m1$Conventionality)
-class(all_data_m1$Conventionality)
+# read data and delete the first unnecessary columns
+data_MSE <- read_csv("data/csv_files/all_data_w_MSE.csv") #we use all_data_w_MSE.csv
+data_MSE$X1 <- NULL
 
 
-# grouping by participant and looking at the last 35 images
-conv_last35 <- all_data_m1 %>% 
-  group_by(subject) %>%   
-  slice(tail(row_number(), 35)) %>% 
-  select(Conventionality, subject) %>% 
-  as.data.frame()
-
-mean(conv_last35$Conventionality) #4.606845 - so basically the same as the overall mean
-sd(conv_last35$Conventionality) #2.965397 - also basically the same - both mean and sd go up 0.1 but it doesn't seem problematic
+# plotting complexity 
+MSE_plot1 <- ggplot(data_MSE, aes(Generation, MSE, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of MSE") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge")
+MSE_plot1
 
 
-# grouping by participant
-conv_by_subject <- all_data_m1 %>% 
-  group_by(subject) %>%
-  select(Conventionality, subject) %>% 
-  summarise(mean(Conventionality), sd(Conventionality)) %>% 
-  as.data.frame()
-
-conv_by_subject
-
-range(conv_by_subject[,3]) #range of sd's of scores for each image goes from 0.6206257 to 3.9582781 - people are generally rating images higher than others are
-mean(conv_by_subject[,3]) # mean sd og each participant is 2.087293, so they each are relatively stable in their trend
-
-
-# grouping by image
-conv_by_image <- all_data_m1 %>% 
-  group_by(Drawing_ID) %>%   
-  select(Conventionality, Drawing_ID) %>% 
-  summarise(mean(Conventionality), sd(Conventionality)) %>% 
-  as.data.frame()
-
-
-conv_by_image <- conv_by_image[-c(1693), ] # deleitng the empty row (don't know where it came from, but it's all empty)
-
-range(conv_by_image[,3]) #range of sd's of scores for each image goes from 0.834523 to 4.274091 - so for some images, people are not agreeing, for others, they are 
-mean(conv_by_image[,3]) # mean sd of each image is 2.723376, so around the same as the overall sd
+# plotting complexity across chains
+MSE_plot2 <- ggplot(data_MSE, aes(Generation, MSE, fill = Condition)) +
+  geom_bar(fun.y = "mean", stat = "summary", position = "dodge") +
+  ggtitle("Development of MSE") +
+  stat_summary(geom = "errorbar", fun.data = mean_se, position = "dodge") +
+  facet_wrap(data_MSE$Chain)
+MSE_plot2
 
 ```
 
 
-
-# looking at sd
+some plots - Complexity
 ```{r}
+# conditions and complexity
+plot_simple_cond <- ggplot(df_complexity, aes(Condition, Complexity)) +
+                             geom_bar(stat = "identity")
+plot_simple_cond
 
-gen_0_cond_1 <- df_conventionality %>% subset(Generation == 0 & Condition == 1)
-mean(gen_0_cond_1$Conventionality)
-sd(gen_0_cond_1$Conventionality)
+# generation and complexity
+plot_simple_gen <- ggplot(df_complexity, aes(Generation, Complexity)) +
+  geom_bar(stat = "identity")
+  #geom_smooth(method = lm)
+plot_simple_gen
 
-gen_0_cond_2 <- df_conventionality %>% subset(Generation == 0 & Condition == 2)
-mean(gen_0_cond_2$Conventionality)
-sd(gen_0_cond_2$Conventionality)
+# generation, condition and complexity
+plot_simple_gen_cond <- ggplot(df_complexity, aes(Generation, Complexity, color = Condition)) +
+                             geom_smooth(method = lm)
+plot_simple_gen_cond
 
-gen_0_cond_3 <- df_conventionality %>% subset(Generation == 0 & Condition == 3)
-mean(gen_0_cond_3$Conventionality)
-sd(gen_0_cond_3$Conventionality)
+# source image and complexity
+plot_simple_gen_source <- ggplot(df_complexity, aes(Source_image, Complexity)) +
+  geom_bar(stat = "identity")# +
+  #geom_errorbar(aes(ymin=(Complexity-sd(Complexity)), ymax=(Complexity-sd(Complexity))), width=.2, position=position_dodge(.9))
+plot_simple_gen_source
 
-gen_0_cond_4 <- df_conventionality %>% subset(Generation == 0 & Condition == 4)
-mean(gen_0_cond_4$Conventionality)
-sd(gen_0_cond_4$Conventionality)
+# participant and complexity
+plot_simple_subj <- ggplot(df_complexity, aes(Subject, Complexity)) +
+                            geom_point()#geom_bar(stat = "identity")
+plot_simple_subj
 
-
-gen_1_cond_1 <- df_conventionality %>% subset(Generation == 1 & Condition == 1)
-mean(gen_1_cond_1$Conventionality)
-sd(gen_1_cond_1$Conventionality)
-
-gen_1_cond_2 <- df_conventionality %>% subset(Generation == 1 & Condition == 2)
-mean(gen_1_cond_2$Conventionality)
-sd(gen_1_cond_2$Conventionality)
-
-gen_1_cond_3 <- df_conventionality %>% subset(Generation == 1 & Condition == 3)
-mean(gen_1_cond_3$Conventionality)
-sd(gen_1_cond_3$Conventionality)
-
-gen_1_cond_4 <- df_conventionality %>% subset(Generation == 1 & Condition == 4)
-mean(gen_1_cond_4$Conventionality)
-sd(gen_1_cond_4$Conventionality)
 ```
 
 
-some plots
+some plots - conventionality
 ```{r}
 
 p_load(ggplot2, tidyr, dplyr)
@@ -396,8 +346,6 @@ plot_simple_subj
 ```
 
 
-
-
 some plots - MSE
 ```{r}
 # we make condition into numeric for the plots
@@ -471,130 +419,103 @@ plot_simple_subj
 ```
 
 
-Ideal model: 
-
-Complexity ~ 1 + Condition*Generation +
-  (1 + condition*generation | Source_image) +
-  (1 + condition*generation | Subject:Chain) +
-  (1 + condition*generation | Chain)
 
 
-simple model, with no bayesian fansy
+looking at mean and sd of the data in different ways
 ```{r}
-pacman::p_load(lmerTest, ggplot2)
+all_data_m1 <- data.frame(matrix(ncol = 1, nrow = 0)) #ncol doesn't actually make a difference
 
-simple_mod_MSE_1 <- lm(MSE ~ 1 + Condition, df_MSE)
-summary(simple_mod_MSE_1)
+for (i in 1:length(list_files_m)){
+  file_path_m <- list_files_m[i]
+  d_m <- jsonlite::fromJSON(file_path_m, flatten=T) %>% 
+    #select(drawing_id, button_pressed, completion_code) %>% 
+    rename(Drawing_ID = drawing_id,
+           Conventionality = button_pressed) %>% 
+    filter(is.na(Drawing_ID) + is.na(completion_code) < 2 ,)
+  if (nrow(all_data_m1) == 0){
+    all_data_m1 <- d_m
+  } else {
+    all_data_m1 <- rbind(all_data_m1, d_m)
+  }
+}
 
-simple_mod_MSE_2 <- lm(MSE ~ 1 + Generation, df_MSE)
-summary(simple_mod_MSE_2) # there is a small rise in conventionality through generations across conditions
-
-simple_mod_MSE_3 <- lm(MSE ~ 1 + Generation*Condition, df_MSE)
-summary(simple_mod_MSE_3) # I'm a bit confused by these results
-
-
-simple_mod_MSE_4 <- lmerTest::lmer(MSE ~ 1 + Condition + (1 + Condition | Subject), df_MSE) # failed to converge
-summary(simple_mod_MSE_4)
-
-simple_mod_MSE_5 <- lmerTest::lmer(MSE ~ 1 + Generation + (1 + Generation | Subject), df_MSE)# boundary singular fit and failed to converge
-summary(simple_mod_MSE_5)
-
-
-simple_mod_MSE_6 <- lmerTest::lmer(MSE ~ 1 + Condition + Generation + 
-                       (1 + Condition + Generation | Subject), df_MSE)
-summary(simple_mod_MSE_6)
-
-simple_mod_MSE_7 <- lmerTest::lmer(MSE ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_MSE)
-summary(simple_mod_MSE_7)
-```
-
-lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
-     start = NULL, verbose = 0L, subset, weights, na.action,
-     offset, contrasts = NULL, devFunOnly = FALSE)
-
-mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
-summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.
+all_data_m1$Conventionality <- as.numeric(all_data_m1$Conventionality)
+class(all_data_m1$Conventionality)
 
 
+# grouping by participant and looking at the last 35 images
+conv_last35 <- all_data_m1 %>% 
+  group_by(subject) %>%   
+  slice(tail(row_number(), 35)) %>% 
+  select(Conventionality, subject) %>% 
+  as.data.frame()
+
+mean(conv_last35$Conventionality) #4.606845 - so basically the same as the overall mean
+sd(conv_last35$Conventionality) #2.965397 - also basically the same - both mean and sd go up 0.1 but it doesn't seem problematic
 
 
+# grouping by participant
+conv_by_subject <- all_data_m1 %>% 
+  group_by(subject) %>%
+  select(Conventionality, subject) %>% 
+  summarise(mean(Conventionality), sd(Conventionality)) %>% 
+  as.data.frame()
 
-some plots - Complexity
+conv_by_subject
 
-```{r}
-# conditions and complexity
-plot_simple_cond <- ggplot(df_complexity, aes(Condition, Complexity)) +
-                             geom_bar(stat = "identity")
-plot_simple_cond
+range(conv_by_subject[,3]) #range of sd's of scores for each image goes from 0.6206257 to 3.9582781 - people are generally rating images higher than others are
+mean(conv_by_subject[,3]) # mean sd og each participant is 2.087293, so they each are relatively stable in their trend
 
-# generation and complexity
-plot_simple_gen <- ggplot(df_complexity, aes(Generation, Complexity)) +
-  geom_bar(stat = "identity")
-  #geom_smooth(method = lm)
-plot_simple_gen
 
-# generation, condition and complexity
-plot_simple_gen_cond <- ggplot(df_complexity, aes(Generation, Complexity, color = Condition)) +
-                             geom_smooth(method = lm)
-plot_simple_gen_cond
+# grouping by image
+conv_by_image <- all_data_m1 %>% 
+  group_by(Drawing_ID) %>%   
+  select(Conventionality, Drawing_ID) %>% 
+  summarise(mean(Conventionality), sd(Conventionality)) %>% 
+  as.data.frame()
 
-# source image and complexity
-plot_simple_gen_source <- ggplot(df_complexity, aes(Source_image, Complexity)) +
-  geom_bar(stat = "identity")# +
-  #geom_errorbar(aes(ymin=(Complexity-sd(Complexity)), ymax=(Complexity-sd(Complexity))), width=.2, position=position_dodge(.9))
-plot_simple_gen_source
 
-# participant and complexity
-plot_simple_subj <- ggplot(df_complexity, aes(Subject, Complexity)) +
-                            geom_point()#geom_bar(stat = "identity")
-plot_simple_subj
+conv_by_image <- conv_by_image[-c(1693), ] # deleitng the empty row (don't know where it came from, but it's all empty)
+
+range(conv_by_image[,3]) #range of sd's of scores for each image goes from 0.834523 to 4.274091 - so for some images, people are not agreeing, for others, they are 
+mean(conv_by_image[,3]) # mean sd of each image is 2.723376, so around the same as the overall sd
 
 ```
 
-
-Ideal model: 
-
-Complexity ~ 1 + Condition*Generation +
-  (1 + condition*generation | Source_image) +
-  (1 + condition*generation | Subject:Chain) +
-  (1 + condition*generation | Chain)
-
-
-simple model, with no bayesian fansy
+looking at sd
 ```{r}
-pacman::p_load(lmerTest, ggplot2)
 
-simple_mod_1 <- lm(Complexity ~ 1 + Condition, df_complexity)
-summary(simple_mod_1)
+gen_0_cond_1 <- df_conventionality %>% subset(Generation == 0 & Condition == 1)
+mean(gen_0_cond_1$Conventionality)
+sd(gen_0_cond_1$Conventionality)
 
-simple_mod_2 <- lm(Complexity ~ 1 + Generation, df_complexity)
-summary(simple_mod_2)
+gen_0_cond_2 <- df_conventionality %>% subset(Generation == 0 & Condition == 2)
+mean(gen_0_cond_2$Conventionality)
+sd(gen_0_cond_2$Conventionality)
 
-simple_mod_3 <- lm(Complexity ~ 1 + Generation*Condition, df_complexity)
-summary(simple_mod_3)
+gen_0_cond_3 <- df_conventionality %>% subset(Generation == 0 & Condition == 3)
+mean(gen_0_cond_3$Conventionality)
+sd(gen_0_cond_3$Conventionality)
 
-
-
-simple_mod_4 <- lmerTest::lmer(Complexity ~ 1 + Condition + (1 + Condition | Subject), df_complexity)
-summary(simple_mod_4)
-
-simple_mod_5 <- lmerTest::lmer(Complexity ~ 1 + Generation + (1 + Generation | Subject), df_complexity)
-summary(simple_mod_5)
+gen_0_cond_4 <- df_conventionality %>% subset(Generation == 0 & Condition == 4)
+mean(gen_0_cond_4$Conventionality)
+sd(gen_0_cond_4$Conventionality)
 
 
-simple_mod_6 <- lmerTest::lmer(Complexity ~ 1 + Condition + Generation + 
-                       (1 + Condition + Generation | Subject), df_complexity)
-summary(simple_mod_6)
+gen_1_cond_1 <- df_conventionality %>% subset(Generation == 1 & Condition == 1)
+mean(gen_1_cond_1$Conventionality)
+sd(gen_1_cond_1$Conventionality)
 
-simple_mod_7 <- lmerTest::lmer(Complexity ~ 1 + Generation*Condition + (1 + Generation*Condition | Subject), df_complexity)
-summary(simple_mod_7)
+gen_1_cond_2 <- df_conventionality %>% subset(Generation == 1 & Condition == 2)
+mean(gen_1_cond_2$Conventionality)
+sd(gen_1_cond_2$Conventionality)
+
+gen_1_cond_3 <- df_conventionality %>% subset(Generation == 1 & Condition == 3)
+mean(gen_1_cond_3$Conventionality)
+sd(gen_1_cond_3$Conventionality)
+
+gen_1_cond_4 <- df_conventionality %>% subset(Generation == 1 & Condition == 4)
+mean(gen_1_cond_4$Conventionality)
+sd(gen_1_cond_4$Conventionality)
 ```
-
-lmer(formula, data = NULL, REML = TRUE, control = lmerControl(),
-     start = NULL, verbose = 0L, subset, weights, na.action,
-     offset, contrasts = NULL, devFunOnly = FALSE)
-
-mod_f1_2 <- lmerTest::lmer(yi ~ 1 + (1 | studyID), es_f1_2, weights = 1/vi, REML=F, control = lme4::lmerControl( check.nobs.vs.nlev ='ignore', check.nobs.vs.nRE = 'ignore'))
-summary(mod_f1_2) # We get boundary (singular) fit again. Ouch. Does it matter? WHo knows. Maybe Riccardo does.
-
 

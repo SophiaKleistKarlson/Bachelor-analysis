@@ -12,8 +12,8 @@ Model 3: Error between images
 # set working directory
 setwd("~/Social Transmission Study/Analysis of drawings/")
 
-# load necesary packages through pacman
-pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr)
+# load necessary packages through pacman
+pacman::p_load(tidyverse, brms, ggplot2, stringr, dplyr, bayesplot)
 
 # RStudio version
 RStudio.Version()
@@ -60,9 +60,9 @@ Modeling
 set.seed(555)
 
 # Define the model
-MSE_mod <- bf(MSE ~ 1 + Condition + mo(Generation) + Condition:mo(Generation) + 
-                       (1 + Condition | gr(Subject, by = Chain)))
-                       #(1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
+MSE_mod <- bf(MSE ~ 0 + Condition + mo(Generation) + Condition:mo(Generation) + 
+                       (1 + Condition | gr(Subject, by = Chain)) +
+                       (1 + Condition + mo(Generation) + Condition:mo(Generation) | Source_image))
 
 # Figure out what priors we'll need
 get_prior(MSE_mod, family = gaussian, df_MSE)
@@ -85,7 +85,7 @@ sd(df_source$MSE_mean)/2 # scaled = 0.12, half = 0.06
 
 prior_MSE_mod <- c(
   prior(normal(0, 1),           class = b), #mean and sd of MSE #4.38, 2.81
-  prior(normal(0, 0.25),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(normal(0, 0.22),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
   prior(normal(1, 0.5),         class = sigma), #mean: sd of MSE sigma: half of the sd of MSE #2.81, 1.40
   prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
   
@@ -140,11 +140,11 @@ plot(MSE_mod1)
 
 # Rank trace plots
 mcmc_rank_overlay(MSE_mod1, 
-                  pars = c("b_Intercept", "b_Condition2", "b_Condition3", "b_Condition4")) + 
+                  pars = c("b_Condition1", "b_Condition2", "b_Condition3", "b_Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(MSE_mod1, 
-                  pars = c("b_Generation", "b_Condition2:Generation", "b_Condition3:Generation", "b_Condition4:Generation")) + 
+                  pars = c("b_moGeneration", "b_moGeneration:Condition2", "b_moGeneration:Condition3", "b_moGeneration:Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(MSE_mod1, 
@@ -152,24 +152,37 @@ mcmc_rank_overlay(MSE_mod1,
   theme_classic()
 
 
+# After trying different hypotheses, these turned out to be the ones with highest posterior probability
+hypothesis(MSE_mod1,"Condition1 > Condition2") 
+hypothesis(MSE_mod1,"Condition1 > Condition3")
+hypothesis(MSE_mod1,"Condition1 > Condition4")
 
-
-hypothesis(MSE_mod1,"Condition2 = Condition3") # Is condition 2 more complex than condition 3?
+hypothesis(MSE_mod1,"Condition2 = Condition3")
 hypothesis(MSE_mod1,"Condition3 = Condition4")
 hypothesis(MSE_mod1,"Condition2 = Condition4")
 
-hypothesis(MSE_mod1,"Intercept > 0")
 
-hypothesis(MSE_mod1,"Generation = 0") # this is the most probable in terms of generation
-hypothesis(MSE_mod1,"Condition2:Generation > 0") # this is more probable than =, and a LOT more than <
-hypothesis(MSE_mod1,"Condition3:Generation > 0") # this is more probable than =, and a LOT more than <
-hypothesis(MSE_mod1,"Condition4:Generation > 0") # this is more probable than =, and a LOT more than <
+hypothesis(MSE_mod1,"moGeneration1 = 0") # this is the most probable in terms of generation
 
-plot(hypothesis(MSE_mod1, "")) # After trying different hypotheses, this turned out to be the best
+hypothesis(MSE_mod1,"Condition2:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
+hypothesis(MSE_mod1,"Condition3:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
+hypothesis(MSE_mod1,"Condition4:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
+
+
+plot(hypothesis(MSE_mod1,"Condition1 > Condition2"))
+plot(hypothesis(MSE_mod1,"Condition1 > Condition3"))
+plot(hypothesis(MSE_mod1,"Condition1 > Condition4"))
+
+plot(hypothesis(MSE_mod1,"Condition2 = Condition3"))
+plot(hypothesis(MSE_mod1,"Condition3 = Condition4"))
+plot(hypothesis(MSE_mod1,"Condition2 = Condition4"))
 
 
 # Plot conditional effects
 conditional_effects(MSE_mod1)
+
+conditional_effects(MSE_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
+
 ```
 
 

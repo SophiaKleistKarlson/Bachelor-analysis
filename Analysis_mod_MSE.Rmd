@@ -85,16 +85,15 @@ sd(df_source$MSE_mean)/2 # scaled = 0.12, half = 0.06
 
 prior_MSE_mod <- c(
   prior(normal(0, 1),           class = b), #mean and sd of MSE #4.38, 2.81
-  prior(normal(0, 0.22),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
   prior(normal(1, 0.5),         class = sigma), #mean: sd of MSE sigma: half of the sd of MSE #2.81, 1.40
-  prior(lkj(1),                 class = cor), # I choose lkj prior of 1 - WHY??
+  prior(normal(0, 0.22),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(lkj(1),                 class = cor), # I choose lkj prior of 1
   
   # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 7 generations)
   prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition21),                 
   prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition31),             
   prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition41),            
   prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration1)
-  
   #prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of MSE
 )
 

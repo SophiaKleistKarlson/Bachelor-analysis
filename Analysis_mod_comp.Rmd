@@ -88,15 +88,14 @@ sd(df_source$mean_comp) # scaled = 0.25, half = 0.12
 prior_complexity_mod <- c(
   prior(normal(0, 1),           class = b), #mean and sd of complexity: 24641.25, 6401.52. z-scored: 0, 1
   prior(normal(1, 0.5),         class = sigma), #mean: sd of complexity sigma: half of the sd of complexity: 6401.52, 3200.76. z-scored: 1, 0.5
-  prior(lkj(1),                 class = cor),# I choose lkj prior of 1 - WHY??
+  prior(normal(0, 0.25),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1579.648. Z-scored: 0, 0.25.
+  prior(lkj(1),                 class = cor),# I choose lkj prior of 1
   
   # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 8 generations)
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition21),                 
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition31),             
   prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration:Condition41),            
-  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration1),
-  
-  prior(normal(0, 0.25),        class = sd) #mean: 0 (I expect that they might not vary at all). sd for the mean complexity for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1579.648. Z-scored: 0, 0.25.
+  prior(dirichlet(rep(1, 7)),   class = simo, coef = moGeneration1)
 )
 
 

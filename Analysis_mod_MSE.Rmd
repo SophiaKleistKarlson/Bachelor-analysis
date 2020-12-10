@@ -144,7 +144,7 @@ mcmc_rank_overlay(MSE_mod1,
   theme_classic()
 
 mcmc_rank_overlay(MSE_mod1, 
-                  pars = c("b_moGeneration", "b_moGeneration:Condition2", "b_moGeneration:Condition3", "b_moGeneration:Condition4")) + 
+                  pars = c("bsp_moGeneration", "bsp_moGeneration:Condition2", "bsp_moGeneration:Condition3", "bsp_moGeneration:Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(MSE_mod1, 
@@ -152,30 +152,39 @@ mcmc_rank_overlay(MSE_mod1,
   theme_classic()
 
 
-# After trying different hypotheses, these turned out to be the ones with highest posterior probability
-hypothesis(MSE_mod1,"Condition1 > Condition2") 
-hypothesis(MSE_mod1,"Condition1 > Condition3")
-hypothesis(MSE_mod1,"Condition1 > Condition4")
+# After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition2)") 
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition3)")
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition4)")
 
-hypothesis(MSE_mod1,"Condition2 = Condition3")
-hypothesis(MSE_mod1,"Condition3 = Condition4")
-hypothesis(MSE_mod1,"Condition2 = Condition4")
+hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)")
+hypothesis(MSE_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)")
+hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
+
+# overall effect of generation
+hypothesis(MSE_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 > 0", class = "bsp")
+
+# effects of the interactions between generation and conditions
+hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
 
 
-hypothesis(MSE_mod1,"moGeneration1 = 0") # this is the most probable in terms of generation
+# plot the best hypotheses
+plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition2)")) 
+plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition3)"))
+plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition4)"))
 
-hypothesis(MSE_mod1,"Condition2:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
-hypothesis(MSE_mod1,"Condition3:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
-hypothesis(MSE_mod1,"Condition4:moGeneration1 > 0") # this is more probable than =, and a LOT more than <
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)"))
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)"))
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)"))
 
-
-plot(hypothesis(MSE_mod1,"Condition1 > Condition2"))
-plot(hypothesis(MSE_mod1,"Condition1 > Condition3"))
-plot(hypothesis(MSE_mod1,"Condition1 > Condition4"))
-
-plot(hypothesis(MSE_mod1,"Condition2 = Condition3"))
-plot(hypothesis(MSE_mod1,"Condition3 = Condition4"))
-plot(hypothesis(MSE_mod1,"Condition2 = Condition4"))
+plot(hypothesis(MSE_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 > 0", class = "bsp"))
+plot(hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp"))
+plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp"))
+plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp")) 
+plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp"))
 
 
 # Plot conditional effects
@@ -183,8 +192,6 @@ conditional_effects(MSE_mod1)
 
 conditional_effects(MSE_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
 
+head(parnames(MSE_mod1), 10)
 ```
-
-
-
 

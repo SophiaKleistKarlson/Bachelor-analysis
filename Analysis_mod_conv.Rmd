@@ -159,19 +159,39 @@ mcmc_rank_overlay(convention_mod1,
 
 
 
+# After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)") 
+hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)")
+hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)")
 
-hypothesis(convention_mod1,"Condition2 = Condition3") # Is condition 2 more complex than condition 3?
-hypothesis(convention_mod1,"Condition3 = Condition4")
-hypothesis(convention_mod1,"Condition2 = Condition4")
+hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)")
+hypothesis(convention_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)")
+hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
 
-hypothesis(convention_mod1,"Intercept > 0")
+# overall effect of generation
+hypothesis(convention_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp")
 
-hypothesis(convention_mod1,"Generation = 0") # this is the most probable in terms of generation
-hypothesis(convention_mod1,"Condition2:Generation > 0") # this is more probable than =, and a LOT more than <
-hypothesis(convention_mod1,"Condition3:Generation > 0") # this is more probable than =, and a LOT more than <
-hypothesis(convention_mod1,"Condition4:Generation > 0") # this is more probable than =, and a LOT more than <
+# effects of the interactions between generation and conditions
+hypothesis(convention_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
+hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
+hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
 
-plot(hypothesis(convention_mod1, "")) # After trying different hypotheses, this turned out to be the best
+
+# plot the best hypotheses
+plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)")) 
+plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)"))
+plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)"))
+
+plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)"))
+plot(hypothesis(convention_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)"))
+plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)"))
+
+plot(hypothesis(convention_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp"))
+plot(hypothesis(convention_mod1,"moGeneration < 0", class = "bsp"))
+plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp"))
+plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp")) 
+plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp"))
 
 
 class(convention_mod1) # "brmsfit"

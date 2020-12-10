@@ -78,11 +78,11 @@ sd(df_complexity$Complexity)
 
 # For choosing the sd prior
 df_part <- df_complexity %>% group_by(Subject) %>% summarize(compl_mean = mean(Complexity)) #find mean complexity for each participant
-sd(df_part$compl_mean) #get the standard deviation of the mean complexity for each participant = 3159.295. Divide this in two = 1579.648. Scaled: 
+sd(df_part$compl_mean) #get the standard deviation of the mean complexity for each participant = 3159.295. Divide this in two = 1579.648. Scaled: 0.49, half = 0.25
 
 # do the same, but grouping by source image
 df_source <- df_complexity %>% group_by(Source_image) %>% summarize(mean_comp = mean(Complexity)) # find mean conventionality for each source image
-sd(df_source$mean_comp)/2 # scaled = , half = 
+sd(df_source$mean_comp) # scaled = 0.25, half = 0.12
 
 
 prior_complexity_mod <- c(
@@ -140,12 +140,13 @@ plot(complexity_mod1)
 
 
 # Rank trace plots
+# Rank trace plots
 mcmc_rank_overlay(complexity_mod1, 
-                  pars = c("b_Condition2", "b_Condition3", "b_Condition4")) + 
+                  pars = c("b_Condition1", "b_Condition2", "b_Condition3", "b_Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(complexity_mod1, 
-                  pars = c("b_Generation", "b_Condition2:Generation", "b_Condition3:Generation", "b_Condition4:Generation")) + 
+                  pars = c("bsp_moGeneration", "bsp_moGeneration:Condition2", "bsp_moGeneration:Condition3", "bsp_moGeneration:Condition4")) + 
   theme_classic()
 
 mcmc_rank_overlay(complexity_mod1, 
@@ -153,39 +154,46 @@ mcmc_rank_overlay(complexity_mod1,
   theme_classic()
 
 
+# After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition2)") 
+hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition3)")
+hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition4)")
 
-# After trying different hypotheses, these turned out to be the ones with highest posterior probability
-hypothesis(complexity_mod1,"Condition1 > Condition2") 
-hypothesis(complexity_mod1,"Condition1 > Condition3")
-hypothesis(complexity_mod1,"Condition1 > Condition4")
+hypothesis(complexity_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)")
+hypothesis(complexity_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)")
+hypothesis(complexity_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
 
-hypothesis(complexity_mod1,"Condition2 = Condition3") 
-hypothesis(complexity_mod1,"Condition3 = Condition4")
-hypothesis(complexity_mod1,"Condition2 = Condition4")
+# overall effect of generation
+hypothesis(complexity_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp")
 
-# these don't work...
-hypothesis(complexity_mod1,"moGeneration1 < 0")
-hypothesis(complexity_mod1,"Condition2:moGeneration < 0")
-hypothesis(complexity_mod1,"Condition3:Generation < 0")
-hypothesis(complexity_mod1,"Condition4:Generation < 0")
-
-
-
-plot(hypothesis(complexity_mod1, "Condition1 > Condition2")) 
-plot(hypothesis(complexity_mod1, "Condition1 > Condition3")) 
-plot(hypothesis(complexity_mod1, "Condition1 > Condition4")) 
-
-plot(hypothesis(complexity_mod1,"Condition2 = Condition3"))
-plot(hypothesis(complexity_mod1,"Condition3 = Condition4"))
-plot(hypothesis(complexity_mod1,"Condition2 = Condition4"))
+# effects of the interactions between generation and conditions
+hypothesis(complexity_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
+hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
+hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
 
 
-plot(hypothesis(complexity_mod1, "moGeneration > 0")) 
+# plot the best hypotheses
+plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition2)")) 
+plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition3)"))
+plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition4)"))
 
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)"))
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)"))
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)"))
+
+plot(hypothesis(complexity_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp"))
+plot(hypothesis(complexity_mod1,"moGeneration < 0", class = "bsp"))
+plot(hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp"))
+plot(hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp")) 
+plot(hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp"))
 
 
 # Plot conditional effects
 conditional_effects(complexity_mod1)
+
+conditional_effects(complexity_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
+
 ```
 
 

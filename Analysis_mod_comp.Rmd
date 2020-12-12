@@ -53,6 +53,24 @@ df_complexity <- data_comp %>% select(Subject, Chain, Generation, Condition, Sou
 # Z-score outcome variable to make it easier to deal with and interpret
 df_complexity$Complexity <- scale(df_complexity$Complexity)
 
+
+# check mean complexity of each of the conditions
+class(df_complexity$Complexity)
+Cond1_comp <- df_complexity %>% subset(Condition == 1) %>% subset(Generation == 0) %>% select(Complexity) 
+Cond1_comp$Complexity <- as.numeric(Cond1_comp$Complexity)
+mean(Cond1_comp$Complexity) # at gen 0: 0.759147. Overall: 0.8644237
+
+Cond2_comp <- df_complexity %>% subset(Condition == 2) %>% subset(Generation == 0) %>% select(Complexity) 
+Cond2_comp$Complexity <- as.numeric(Cond2_comp$Complexity)
+mean(Cond2_comp$Complexity) # at gen 0: 0.7259283. Overall: -0.3349807
+
+Cond3_comp <- df_complexity %>% subset(Condition == 3) %>% subset(Generation == 0) %>% select(Complexity)
+Cond3_comp$Complexity <- as.numeric(Cond3_comp$Complexity)
+mean(Cond3_comp$Complexity) # at gen 0: 0.7027229. Overall: -0.2500194
+
+Cond4_comp <- df_complexity %>% subset(Condition == 4) %>% subset(Generation == 0) %>% select(Complexity)
+Cond4_comp$Complexity <- as.numeric(Cond4_comp$Complexity)
+mean(Cond4_comp$Complexity) # at gen 0: 0.7707145. Overall: -0.2794236
 ```
 
 
@@ -154,6 +172,11 @@ mcmc_rank_overlay(complexity_mod1,
 
 
 # After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(complexity_mod1,"Condition1 > 0")
+hypothesis(complexity_mod1,"(Condition2 - Condition1) < 0")
+hypothesis(complexity_mod1,"(Condition1 + Condition3) < 0")
+hypothesis(complexity_mod1,"(Condition1 + Condition4) < 0")
+
 hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition2)") 
 hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition3)")
 hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition4)")
@@ -163,16 +186,21 @@ hypothesis(complexity_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4
 hypothesis(complexity_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
 
 # overall effect of generation
-hypothesis(complexity_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp")
+hypothesis(complexity_mod1,"(moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 < 0", class = "bsp")
 
 # effects of the interactions between generation and conditions
-hypothesis(complexity_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration = 0", class = "bsp")
 hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
 hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
 hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
 
 
 # plot the best hypotheses
+plot(hypothesis(complexity_mod1,"Condition1 = 0"))
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition2) < 0"))
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition3) < 0"))
+plot(hypothesis(complexity_mod1,"(Condition1 + Condition4) < 0"))
+
 plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition2)")) 
 plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition3)"))
 plot(hypothesis(complexity_mod1,"Condition1 > (Condition1 + Condition4)"))
@@ -191,8 +219,7 @@ plot(hypothesis(complexity_mod1,"(moGeneration + moGeneration:Condition4) < 0", 
 # Plot conditional effects
 conditional_effects(complexity_mod1)
 
-conditional_effects(complexity_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
-
+conditional_effects(complexity_mod1, effects = "Generation", conditions = make_conditions(complexity_mod1, vars = "Condition"))
 ```
 
 

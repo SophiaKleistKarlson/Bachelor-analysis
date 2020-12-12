@@ -51,6 +51,24 @@ df_MSE <- data_MSE %>% select(Subject, Chain, Generation, Condition, Source_imag
 
 # Z-score outcome variable to make it easier to deal with and interpret
 df_MSE$MSE <- scale(df_MSE$MSE)
+
+
+# check mean MSE of each of the conditions
+Cond1_MSE <- df_MSE %>% subset(Condition == 1) %>% subset(Generation == 0) %>% select(MSE) 
+Cond1_MSE$MSE <- as.numeric(Cond1_MSE$MSE)
+mean(Cond1_MSE$MSE) # at gen 0: 0.6771817. Overall: 0.8745232
+
+Cond2_MSE <- df_MSE %>% subset(Condition == 2) %>% subset(Generation == 0) %>% select(MSE) 
+Cond2_MSE$MSE <- as.numeric(Cond2_MSE$MSE)
+mean(Cond2_MSE$MSE) # at gen 0: 0.3701661. Overall: -0.3798595
+
+Cond3_MSE <- df_MSE %>% subset(Condition == 3) %>% subset(Generation == 0) %>% select(MSE)
+Cond3_MSE$MSE <- as.numeric(Cond3_MSE$MSE)
+mean(Cond3_MSE$MSE)# at gen 0: 0.5331424. Overall: -0.2153379
+
+Cond4_MSE <- df_MSE %>% subset(Condition == 4) %>% subset(Generation == 0) %>% select(MSE)
+Cond4_MSE$MSE <- as.numeric(Cond4_MSE$MSE)
+mean(Cond4_MSE$MSE)# at gen 0: 0.4362941. Overall: -0.2793258
 ```
 
 
@@ -129,13 +147,11 @@ MSE_mod1 <- brm(
 pp_check(MSE_mod1, nsamples = 100)
 
 
-
 # Model summary
 summary(MSE_mod1) # Warnings? Suspicious Rhat activity? Bad priors?
 
 # Plot the model to get trace plots
 plot(MSE_mod1)
-
 
 # Rank trace plots
 mcmc_rank_overlay(MSE_mod1, 
@@ -152,6 +168,189 @@ mcmc_rank_overlay(MSE_mod1,
 
 
 # After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+
+# main effects of conditions
+hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > 0")
+hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 < 0")
+hypothesis(MSE_mod1,"(Condition3*7 + 0.05*21)/7 < 0")
+hypothesis(MSE_mod1,"(Condition4*7 + 0.05*21)/7 < 0")
+
+# relations between the conditions
+hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition2*7 + 0.05*21)/7") 
+hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition3*7 + 0.05*21)/7")
+hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition4*7 + 0.05*21)/7")
+
+hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 = (Condition3*7 + 0.05*21)/7")
+hypothesis(MSE_mod1,"(Condition3*7 + 0.05*21)/7 = (Condition4*7 + 0.05*21)/7")
+hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 = (Condition4*7 + 0.05*21)/7")
+
+
+# overall effect of generation
+hypothesis(MSE_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 > 0", class = "bsp")
+
+# effects of the interactions between generation and conditions
+hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(MSE_mod1,"moGeneration:Condition2 < 0", class = "bsp") 
+hypothesis(MSE_mod1,"moGeneration:Condition3 < 0", class = "bsp") 
+hypothesis(MSE_mod1,"moGeneration:Condition4 < 0", class = "bsp")
+
+
+# plot the best hypotheses
+
+
+# Plot conditional effects
+conditional_effects(MSE_mod1)
+
+conditional_effects(MSE_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
+
+head(parnames(MSE_mod1), 10)
+```
+
+
+Modeling
+```{r}
+df_MSE_test <- df_MSE
+
+df_MSE_test$Condition <- as.numeric(df_MSE_test$Condition)
+
+df_MSE_test <- df_MSE_test %>% subset(Condition <3)
+df_MSE_test$Condition <- as.factor(df_MSE_test$Condition)
+
+# Set seed so that the analysis can be re-run and give the same results
+set.seed(555)
+
+# Define the model
+MSE_mod_test <- bf(MSE ~ 0 + mo(Generation) + Condition + mo(Generation):Condition + 
+                       (1 + Condition | gr(Subject, by = Chain)) +
+                       (1 + mo(Generation) + Condition + mo(Generation):Condition | Source_image))
+
+
+prior_MSE_mod_test <- c(
+  prior(normal(0, 1),           class = b), #mean and sd of MSE #4.38, 2.81
+  prior(normal(1, 0.5),         class = sigma), #mean: sd of MSE sigma: half of the sd of MSE #2.81, 1.40
+  prior(normal(0, 0.22),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(lkj(1),                 class = cor), # I choose lkj prior of 1
+  
+  # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 7 generations)
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition21),                 
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition31),             
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition41),            
+  prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration1)
+  #prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of MSE
+)
+
+
+# The actual model:
+MSE_mod1_test <- brm(
+  formula = MSE_mod_test, 
+  prior = prior_MSE_mod_test,
+  data = df_MSE_test,
+  chains = 2,
+  cores = 2,
+  sample_prior = T,
+  iter = 2000,
+  control = list(adapt_delta=0.99, max_treedepth=20)
+)
+
+# Model summary
+summary(MSE_mod1_test) # Warnings? Suspicious Rhat activity? Bad priors?
+
+# Plot conditional effects
+conditional_effects(MSE_mod1_test)
+
+head(parnames(MSE_mod1_test), 10)
+
+
+
+# After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+
+# to get the main effect of condition 1 we have to use the slope of generation for condition 1, because we only have the intercept - but as we can't combine the effects of the condition and generation variables because they have differnet classes, then I just take the estimates from generation, even though this doesn't encompass the varition... you can see that these two give slightly  different results: 
+hypothesis(MSE_mod1_test,"(Condition1*7 + 0.05*21)/7 > 0") # est:.88, err=0.1
+hypothesis(MSE_mod1_test,"(0.73*7 + moGeneration*21)/7 > 0", class="bsp")# est:.87, err=0.08
+
+hypothesis(MSE_mod1_test,"(Condition2*7 + -0.25*21)/7 < 0") # est:.-0.39, err=0.13
+hypothesis(MSE_mod1_test,"(0.36*7 + moGeneration:Condition2*21)/7 < 0", class="bsp")# est:.-.38, err=0.08
+
+hypothesis(MSE_mod1,"(Condition1 + Condition2) < 0")
+hypothesis(MSE_mod1,"(Condition1 + Condition3) < 0")
+hypothesis(MSE_mod1,"(Condition1 + Condition4) < 0")
+
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition2)") 
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition3)")
+hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition4)")
+
+hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)")
+hypothesis(MSE_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)")
+hypothesis(MSE_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
+
+# overall effect of generation
+hypothesis(MSE_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 > 0", class = "bsp")
+
+# effects of the interactions between generation and conditions
+hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
+hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
+```
+
+
+
+Modeling
+```{r}
+df_MSE_test2 <- df_MSE_test
+
+# Set seed so that the analysis can be re-run and give the same results
+set.seed(555)
+
+# Define the model
+MSE_mod_test2 <- bf(MSE ~ 0 + Condition + 
+                       (1 + Condition | gr(Subject, by = Chain)) +
+                       (1 + Condition | Source_image))
+
+
+prior_MSE_mod_test2 <- c(
+  prior(normal(0, 1),           class = b), #mean and sd of MSE #4.38, 2.81
+  prior(normal(1, 0.5),         class = sigma), #mean: sd of MSE sigma: half of the sd of MSE #2.81, 1.40
+  prior(normal(0, 0.22),        class = sd), #mean: 0 (I expect that they might not vary at all). sd for the mean MSE for each participant = 2780.45. sigma should go from 0 (the mean of the prior) to around that -> sigma: 1390.23.
+  prior(lkj(1),                 class = cor) # I choose lkj prior of 1
+  
+  # simo priors for the monotonic generation variable: mean is 1 for a uniform prior, sigma is K-1, where K is the number of levels in the monotonic variable (we have 7 generations)
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition21),                 
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition31),             
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration:Condition41),            
+  #prior(dirichlet(rep(1, 6)),   class = simo, coef = moGeneration1)
+  #prior(normal(4.38, 2.81),     class = Intercept), #mean and sd of MSE
+)
+
+
+# The actual model:
+MSE_mod1_test2 <- brm(
+  formula = MSE_mod_test2, 
+  prior = prior_MSE_mod_test2,
+  data = df_MSE_test2,
+  chains = 2,
+  cores = 2,
+  sample_prior = T,
+  iter = 2000,
+  control = list(adapt_delta=0.99, max_treedepth=20)
+)
+
+# Model summary
+summary(MSE_mod1_test2) # Warnings? Suspicious Rhat activity? Bad priors?
+
+# Plot conditional effects
+conditional_effects(MSE_mod1_test)
+
+conditional_effects(MSE_mod1_test, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
+
+head(parnames(MSE_mod1_test), 10)
+
+# After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(MSE_mod1,"Condition1 > 0")
+hypothesis(MSE_mod1,"(Condition1 + Condition2) < 0")
+hypothesis(MSE_mod1,"(Condition1 + Condition3) < 0")
+hypothesis(MSE_mod1,"(Condition1 + Condition4) < 0")
+
 hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition2)") 
 hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition3)")
 hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition4)")
@@ -171,6 +370,11 @@ hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp
 
 
 # plot the best hypotheses
+plot(hypothesis(MSE_mod1,"Condition1 = 0"))
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition2) < 0"))
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition3) < 0"))
+plot(hypothesis(MSE_mod1,"(Condition1 + Condition4) < 0"))
+
 plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition2)")) 
 plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition3)"))
 plot(hypothesis(MSE_mod1,"Condition1 > (Condition1 + Condition4)"))
@@ -184,13 +388,5 @@ plot(hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp"))
 plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp"))
 plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp")) 
 plot(hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp"))
-
-
-# Plot conditional effects
-conditional_effects(MSE_mod1)
-
-conditional_effects(MSE_mod1, effects = "Generation", conditions = make_conditions(MSE_mod1, vars = "Condition"))
-
-head(parnames(MSE_mod1), 10)
 ```
 

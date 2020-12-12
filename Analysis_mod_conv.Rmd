@@ -52,6 +52,24 @@ df_conventionality <- data_conv %>% select(Subject, Chain, Generation, Condition
 
 # Z-score outcome variable to make it easier to deal with and interpret
 df_conventionality$Conventionality <- scale(df_conventionality$Conventionality)
+
+
+# check mean complexity of each of the conditions
+Cond1_conv <- df_complexity %>% subset(Condition == 1) %>% subset(Generation == 0) %>% select(Complexity) 
+Cond1_conv$Complexity <- as.numeric(Cond1_conv$Complexity)
+mean(Cond1_conv$Complexity) # at gen 0: 0.759147. Overall: 0.8644237
+
+Cond2_conv <- df_complexity %>% subset(Condition == 2) %>% subset(Generation == 0) %>% select(Complexity) 
+Cond2_conv$Complexity <- as.numeric(Cond2_conv$Complexity)
+mean(Cond2_conv$Complexity) # at gen 0: 0.7259283. Overall: -0.3349807
+
+Cond3_conv <- df_complexity %>% subset(Condition == 3) %>% subset(Generation == 0) %>% select(Complexity)
+Cond3_conv$Complexity <- as.numeric(Cond3_conv$Complexity)
+mean(Cond3_conv$Complexity) # at gen 0: 0.7027229. Overall: -0.2500194
+
+Cond4_conv <- df_complexity %>% subset(Condition == 4) %>% subset(Generation == 0) %>% select(Complexity)
+Cond4_conv$Complexity <- as.numeric(Cond4_conv$Complexity)
+mean(Cond4_conv$Complexity) # at gen 0: 0.7707145. Overall: -0.2794236
 ```
 
 
@@ -157,6 +175,12 @@ mcmc_rank_overlay(convention_mod1,
 
 
 # After trying different hypotheses, these turned out to be the ones with highest evidence ratio
+hypothesis(convention_mod1,"Condition1 = 0")
+hypothesis(convention_mod1,"(Condition1 + Condition2) = 0")
+hypothesis(convention_mod1,"(Condition1 + Condition3) = 0")
+hypothesis(convention_mod1,"(Condition1 + Condition4) = 0")
+
+
 hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)") 
 hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)")
 hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)")
@@ -169,13 +193,19 @@ hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4
 hypothesis(convention_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp")
 
 # effects of the interactions between generation and conditions
-hypothesis(convention_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(convention_mod1,"moGeneration < 0", class = "bsp") #this is the interaction between condition 1 and generation
 hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
 hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
 hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
 
 
 # plot the best hypotheses
+plot(hypothesis(convention_mod1,"Condition1 = 0"))
+plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = 0"))
+plot(hypothesis(convention_mod1,"(Condition1 + Condition3) = 0"))
+plot(hypothesis(convention_mod1,"(Condition1 + Condition4) = 0"))
+
+
 plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)")) 
 plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)"))
 plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)"))

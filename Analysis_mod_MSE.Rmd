@@ -51,8 +51,11 @@ df_MSE <- data_MSE %>% select(Subject, Chain, Generation, Condition, Source_imag
 
 # Z-score outcome variable to make it easier to deal with and interpret
 df_MSE$MSE <- scale(df_MSE$MSE)
+```
 
 
+Look at each conditions
+```{r}
 # check mean MSE of each of the conditions
 Cond1_MSE <- df_MSE %>% subset(Condition == 1) %>% subset(Generation == 0) %>% select(MSE) 
 Cond1_MSE$MSE <- as.numeric(Cond1_MSE$MSE)
@@ -170,32 +173,63 @@ mcmc_rank_overlay(MSE_mod1,
 # After trying different hypotheses, these turned out to be the ones with highest evidence ratio
 
 # main effects of conditions
-hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > 0")
-hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 < 0")
-hypothesis(MSE_mod1,"(Condition3*7 + 0.05*21)/7 < 0")
-hypothesis(MSE_mod1,"(Condition4*7 + 0.05*21)/7 < 0")
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > 0")
+hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 < 0")
+hypothesis(MSE_mod1,"(Condition3*7 - 0.24*21)/7 < 0")
+hypothesis(MSE_mod1,"(Condition4*7 - 0.20*21)/7 < 0")
+
+# these two could have replaced the two top ones, but they gave sligtly smaller estimated error, so I chose the other option as seen above
+#hypothesis(MSE_mod1,"(0.74*7 + moGeneration*21)/7 > 0", class="bsp")
+#hypothesis(MSE_mod1,"(0.34*7 + moGeneration:Condition2*21)/7 < 0", class="bsp")
 
 # relations between the conditions
-hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition2*7 + 0.05*21)/7") 
-hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition3*7 + 0.05*21)/7")
-hypothesis(MSE_mod1,"(Condition1*7 + 0.05*21)/7 > (Condition4*7 + 0.05*21)/7")
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition2*7 - 0.24*21)/7") 
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition3*7 - 0.24*21)/7")
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition4*7 - 0.20*21)/7")
 
-hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 = (Condition3*7 + 0.05*21)/7")
-hypothesis(MSE_mod1,"(Condition3*7 + 0.05*21)/7 = (Condition4*7 + 0.05*21)/7")
-hypothesis(MSE_mod1,"(Condition2*7 + 0.05*21)/7 = (Condition4*7 + 0.05*21)/7")
+hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 < (Condition3*7 - 0.24*21)/7")
+hypothesis(MSE_mod1,"(Condition3*7 - 0.24*21)/7 = (Condition4*7 - 0.20*21)/7")
+hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 = (Condition4*7 - 0.20*21)/7")
 
 
 # overall effect of generation
-hypothesis(MSE_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 > 0", class = "bsp")
+hypothesis(MSE_mod1,"((moGeneration + moGeneration:Condition2 + moGeneration:Condition3 + moGeneration:Condition4)/4) < 0", class = "bsp")
 
 # effects of the interactions between generation and conditions
-hypothesis(MSE_mod1,"moGeneration < 0", class = "bsp")
+hypothesis(MSE_mod1,"moGeneration > 0", class = "bsp")
 hypothesis(MSE_mod1,"moGeneration:Condition2 < 0", class = "bsp") 
 hypothesis(MSE_mod1,"moGeneration:Condition3 < 0", class = "bsp") 
 hypothesis(MSE_mod1,"moGeneration:Condition4 < 0", class = "bsp")
 
 
 # plot the best hypotheses
+plot(hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > 0"))
+plot(hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 < 0"))
+plot(hypothesis(MSE_mod1,"(Condition3*7 - 0.24*21)/7 < 0"))
+plot(hypothesis(MSE_mod1,"(Condition4*7 - 0.20*21)/7 < 0"))
+
+# these two could have replaced the two top ones, but they gave sligtly smaller estimated error, so I chose the other option as seen above
+#hypothesis(MSE_mod1,"(0.74*7 + moGeneration*21)/7 > 0", class="bsp")
+#hypothesis(MSE_mod1,"(0.34*7 + moGeneration:Condition2*21)/7 < 0", class="bsp")
+
+# relations between the conditions
+plot(hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition2*7 - 0.24*21)/7"))
+plot(hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition3*7 - 0.24*21)/7"))
+plot(hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > (Condition4*7 - 0.20*21)/7"))
+
+plot(hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 < (Condition3*7 - 0.24*21)/7"))
+plot(hypothesis(MSE_mod1,"(Condition3*7 - 0.24*21)/7 = (Condition4*7 - 0.20*21)/7"))
+plot(hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 = (Condition4*7 - 0.20*21)/7"))
+
+
+# overall effect of generation
+plot(hypothesis(MSE_mod1,"((moGeneration + moGeneration:Condition2 + moGeneration:Condition3 + moGeneration:Condition4)/4) < 0", class = "bsp"))
+
+# effects of the interactions between generation and conditions
+plot(hypothesis(MSE_mod1,"moGeneration > 0", class = "bsp"))
+plot(hypothesis(MSE_mod1,"moGeneration:Condition2 < 0", class = "bsp")) 
+plot(hypothesis(MSE_mod1,"moGeneration:Condition3 < 0", class = "bsp")) 
+plot(hypothesis(MSE_mod1,"moGeneration:Condition4 < 0", class = "bsp"))
 
 
 # Plot conditional effects
@@ -207,7 +241,9 @@ head(parnames(MSE_mod1), 10)
 ```
 
 
-Modeling
+
+Tests
+1 - only two conditions
 ```{r}
 df_MSE_test <- df_MSE
 
@@ -294,8 +330,7 @@ hypothesis(MSE_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp
 ```
 
 
-
-Modeling
+2 - only two conditions and only modeling condition
 ```{r}
 df_MSE_test2 <- df_MSE_test
 

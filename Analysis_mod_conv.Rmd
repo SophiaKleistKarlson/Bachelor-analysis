@@ -155,78 +155,107 @@ pp_check(convention_mod1, nsamples = 100)
 # Model summary
 summary(convention_mod1) # Warnings? Suspicious Rhat activity? Bad priors?
 
+
 # Plot the model to get trace plots
 plot(convention_mod1)
 
 
 # Rank trace plots
-mcmc_rank_overlay(convention_mod1, 
-                  pars = c("b_Intercept", "b_Condition2", "b_Condition3", "b_Condition4")) + 
+mcmc_rank_overlay(complexity_mod1, 
+                  pars = c("b_Condition1", "b_Condition2", "b_Condition3", "b_Condition4")) + 
   theme_classic()
 
-mcmc_rank_overlay(convention_mod1, 
-                  pars = c("b_Generation", "b_Condition2:Generation", "b_Condition3:Generation", "b_Condition4:Generation")) + 
+mcmc_rank_overlay(complexity_mod1, 
+                  pars = c("bsp_moGeneration", "bsp_moGeneration:Condition2", "bsp_moGeneration:Condition3", "bsp_moGeneration:Condition4")) + 
   theme_classic()
 
-mcmc_rank_overlay(convention_mod1, 
+mcmc_rank_overlay(complexity_mod1, 
                   pars = c("sigma")) + 
   theme_classic()
 
 
 
 # After trying different hypotheses, these turned out to be the ones with highest evidence ratio
-hypothesis(convention_mod1,"Condition1 = 0")
-hypothesis(convention_mod1,"(Condition1 + Condition2) = 0")
-hypothesis(convention_mod1,"(Condition1 + Condition3) = 0")
-hypothesis(convention_mod1,"(Condition1 + Condition4) = 0")
+
+# main effects of conditions
+hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > 0")
+hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 < 0")
+hypothesis(convention_mod1,"(Condition3*8 - 0.22*28)/8 = 0")
+hypothesis(convention_mod1,"(Condition4*8 - 0.21*28)/8 = 0")
 
 
-hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)") 
-hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)")
-hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)")
+# these two could have replaced the two top ones, but they gave sligtly smaller estimated error, so I chose the other option as seen above
+#hypothesis(convention_mod1,"(0.82*8 + moGeneration*28)/8 > 0", class="bsp")
+#hypothesis(convention_mod1,"(0.67*8 + moGeneration:Condition2*28)/8 < 0", class="bsp")
+#hypothesis(convention_mod1,"(0.65*8 + moGeneration:Condition3*28)/8 < 0", class="bsp")
+#hypothesis(convention_mod1,"(0.62*8 + moGeneration:Condition4*28)/8 = 0", class="bsp")
 
-hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)")
-hypothesis(convention_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)")
-hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)")
+# relations between the conditions
+hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition2*8 - 0.25*28)/8") 
+hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition3*8 - 0.22*28)/8")
+hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition4*8 - 0.21*28)/8")
+hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition3*8 - 0.22*28)/8")
+hypothesis(convention_mod1,"(Condition3*8 - 0.22*28)/8 = (Condition4*8 - 0.21*28)/8")
+hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition4*8 - 0.21*28)/8")
+
 
 # overall effect of generation
-hypothesis(convention_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp")
+hypothesis(convention_mod1,"((moGeneration + moGeneration:Condition2 + moGeneration:Condition3 + moGeneration:Condition4)/4) < 0", class = "bsp")
 
 # effects of the interactions between generation and conditions
-hypothesis(convention_mod1,"moGeneration < 0", class = "bsp") #this is the interaction between condition 1 and generation
-hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp") 
-hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp") 
-hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp")
+hypothesis(convention_mod1,"moGeneration > 0", class = "bsp")
+hypothesis(convention_mod1,"moGeneration:Condition2 < 0", class = "bsp") 
+hypothesis(convention_mod1,"moGeneration:Condition3 < 0", class = "bsp") 
+hypothesis(convention_mod1,"moGeneration:Condition4 < 0", class = "bsp")
+
+hypothesis(convention_mod1,"moGeneration < moGeneration:Condition2", class = "bsp")
+hypothesis(convention_mod1,"moGeneration < moGeneration:Condition3", class = "bsp") 
+hypothesis(convention_mod1,"moGeneration < moGeneration:Condition4", class = "bsp") 
+hypothesis(convention_mod1,"moGeneration:Condition2 < moGeneration:Condition3", class = "bsp")
+hypothesis(convention_mod1,"moGeneration:Condition2 > moGeneration:Condition4", class = "bsp")
+hypothesis(convention_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp") 
+
 
 
 # plot the best hypotheses
-plot(hypothesis(convention_mod1,"Condition1 = 0"))
-plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = 0"))
-plot(hypothesis(convention_mod1,"(Condition1 + Condition3) = 0"))
-plot(hypothesis(convention_mod1,"(Condition1 + Condition4) = 0"))
+plot(hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > 0"))
+plot(hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 < 0"))
+plot(hypothesis(convention_mod1,"(Condition3*8 - 0.22*28)/8 = 0"))
+plot(hypothesis(convention_mod1,"(Condition4*8 - 0.21*28)/8 = 0"))
+# these two could have replaced the two top ones, but they gave sligtly smaller estimated error, so I chose the other option as seen above
+#hypothesis(convention_mod1,"(0.74*7 + moGeneration*21)/7 > 0", class="bsp")
+#hypothesis(convention_mod1,"(0.34*7 + moGeneration:Condition2*21)/7 < 0", class="bsp")
+
+# relations between the conditions
+plot(hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition2*8 - 0.25*28)/8"))
+plot(hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition3*8 - 0.22*28)/8"))
+plot(hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition4*8 - 0.21*28)/8"))
+
+plot(hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition3*8 - 0.22*28)/8"))
+plot(hypothesis(convention_mod1,"(Condition3*8 - 0.22*28)/8 = (Condition4*8 - 0.21*28)/8"))
+plot(hypothesis(convention_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition4*8 - 0.21*28)/8"))
 
 
-plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition2)")) 
-plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition3)"))
-plot(hypothesis(convention_mod1,"Condition1 > (Condition1 + Condition4)"))
+# overall effect of generation
+plot(hypothesis(convention_mod1,"((moGeneration + moGeneration:Condition2 + moGeneration:Condition3 + moGeneration:Condition4)/4) < 0", class = "bsp"))
 
-plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition3)"))
-plot(hypothesis(convention_mod1,"(Condition1 + Condition3) = (Condition1 + Condition4)"))
-plot(hypothesis(convention_mod1,"(Condition1 + Condition2) = (Condition1 + Condition4)"))
+# effects of the interactions between generation and conditions
+plot(hypothesis(convention_mod1,"moGeneration > 0", class = "bsp"))
+plot(hypothesis(convention_mod1,"moGeneration:Condition2 < 0", class = "bsp")) 
+plot(hypothesis(convention_mod1,"moGeneration:Condition3 < 0", class = "bsp")) 
+plot(hypothesis(convention_mod1,"moGeneration:Condition4 < 0", class = "bsp"))
 
-plot(hypothesis(convention_mod1,"((moGeneration + (moGeneration + moGeneration:Condition2) + (moGeneration + moGeneration:Condition3) + (moGeneration + moGeneration:Condition4))/4 = 0", class = "bsp"))
-plot(hypothesis(convention_mod1,"moGeneration < 0", class = "bsp"))
-plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition2) < 0", class = "bsp"))
-plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition3) < 0", class = "bsp")) 
-plot(hypothesis(convention_mod1,"(moGeneration + moGeneration:Condition4) < 0", class = "bsp"))
-
+plot(hypothesis(convention_mod1,"moGeneration < moGeneration:Condition2", class = "bsp"))
+plot(hypothesis(convention_mod1,"moGeneration < moGeneration:Condition3", class = "bsp")) 
+plot(hypothesis(convention_mod1,"moGeneration < moGeneration:Condition4", class = "bsp")) 
+plot(hypothesis(convention_mod1,"moGeneration:Condition2 < moGeneration:Condition3", class = "bsp"))
+plot(hypothesis(convention_mod1,"moGeneration:Condition2 > moGeneration:Condition4", class = "bsp"))
+plot(hypothesis(convention_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp"))
 
 class(convention_mod1) # "brmsfit"
 
 # Plot conditional effects
+conditional_effects(convention_mod1)
+
 conditional_effects(convention_mod1, effects = "Generation", conditions = make_conditions(convention_mod1, vars = "Condition"))
 ```
-
-
-
-

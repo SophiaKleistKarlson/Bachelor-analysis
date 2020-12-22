@@ -180,7 +180,6 @@ hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 < 0")
 hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 = 0")
 hypothesis(complexity_mod1,"(Condition4*8 - 0.21*28)/8 = 0")
 
-
 # these two could have replaced the two top ones, but they gave sligtly smaller estimated error, so I chose the other option as seen above
 #hypothesis(complexity_mod1,"(0.82*8 + moGeneration*28)/8 > 0", class="bsp")
 #hypothesis(complexity_mod1,"(0.67*8 + moGeneration:Condition2*28)/8 < 0", class="bsp")
@@ -192,8 +191,8 @@ hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition2*8 - 0.25*28
 hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition3*8 - 0.22*28)/8")
 hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition4*8 - 0.21*28)/8")
 hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition3*8 - 0.22*28)/8")
-hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 = (Condition4*8 - 0.21*28)/8")
 hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition4*8 - 0.21*28)/8")
+hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 = (Condition4*8 - 0.21*28)/8")
 
 
 # overall effect of generation
@@ -205,13 +204,22 @@ hypothesis(complexity_mod1,"moGeneration:Condition2 < 0", class = "bsp")
 hypothesis(complexity_mod1,"moGeneration:Condition3 < 0", class = "bsp") 
 hypothesis(complexity_mod1,"moGeneration:Condition4 < 0", class = "bsp")
 
-hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition2", class = "bsp")
-hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition3", class = "bsp") 
-hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition4", class = "bsp") 
-hypothesis(complexity_mod1,"moGeneration:Condition2 < moGeneration:Condition3", class = "bsp")
-hypothesis(complexity_mod1,"moGeneration:Condition2 > moGeneration:Condition4", class = "bsp")
-hypothesis(complexity_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp") 
+hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition2", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition3", class = "bsp") 
+hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition4", class = "bsp") 
+hypothesis(complexity_mod1,"moGeneration:Condition2 = moGeneration:Condition3", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration:Condition2 = moGeneration:Condition4", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration:Condition3 = moGeneration:Condition4", class = "bsp") 
 
+
+# the ones that we expected but that didn't have the highest ER
+hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 > (Condition3*8 - 0.22*28)/8")
+hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 > (Condition4*8 - 0.21*28)/8")
+hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 > (Condition4*8 - 0.21*28)/8")
+
+hypothesis(complexity_mod1,"moGeneration:Condition2 > moGeneration:Condition3", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration:Condition2 > moGeneration:Condition4", class = "bsp")
+hypothesis(complexity_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp")
 
 
 # plot the best hypotheses
@@ -219,35 +227,27 @@ plot(hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > 0"))
 plot(hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 < 0"))
 plot(hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 = 0"))
 plot(hypothesis(complexity_mod1,"(Condition4*8 - 0.21*28)/8 = 0"))
-# these two could have replaced the two top ones, but they gave sligthly smaller estimated error, so I chose the other option as seen above
-#hypothesis(complexity_mod1,"(0.74*7 + moGeneration*21)/7 > 0", class="bsp")
-#hypothesis(complexity_mod1,"(0.34*7 + moGeneration:Condition2*21)/7 < 0", class="bsp")
 
-# relations between the conditions
 plot(hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition2*8 - 0.25*28)/8"))
 plot(hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition3*8 - 0.22*28)/8"))
 plot(hypothesis(complexity_mod1,"(Condition1*8 + 0.01*28)/8 > (Condition4*8 - 0.21*28)/8"))
-
 plot(hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition3*8 - 0.22*28)/8"))
 plot(hypothesis(complexity_mod1,"(Condition3*8 - 0.22*28)/8 = (Condition4*8 - 0.21*28)/8"))
 plot(hypothesis(complexity_mod1,"(Condition2*8 - 0.25*28)/8 = (Condition4*8 - 0.21*28)/8"))
 
-
-# overall effect of generation
 plot(hypothesis(complexity_mod1,"((moGeneration + moGeneration:Condition2 + moGeneration:Condition3 + moGeneration:Condition4)/4) < 0", class = "bsp"))
 
-# effects of the interactions between generation and conditions
 plot(hypothesis(complexity_mod1,"moGeneration > 0", class = "bsp"))
 plot(hypothesis(complexity_mod1,"moGeneration:Condition2 < 0", class = "bsp")) 
 plot(hypothesis(complexity_mod1,"moGeneration:Condition3 < 0", class = "bsp")) 
 plot(hypothesis(complexity_mod1,"moGeneration:Condition4 < 0", class = "bsp"))
 
-plot(hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition2", class = "bsp"))
-plot(hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition3", class = "bsp")) 
-plot(hypothesis(complexity_mod1,"moGeneration < moGeneration:Condition4", class = "bsp")) 
-plot(hypothesis(complexity_mod1,"moGeneration:Condition2 < moGeneration:Condition3", class = "bsp"))
-plot(hypothesis(complexity_mod1,"moGeneration:Condition2 > moGeneration:Condition4", class = "bsp"))
-plot(hypothesis(complexity_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp"))
+plot(hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition2", class = "bsp"))
+plot(hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition3", class = "bsp")) 
+plot(hypothesis(complexity_mod1,"moGeneration > moGeneration:Condition4", class = "bsp")) 
+plot(hypothesis(complexity_mod1,"moGeneration:Condition2 = moGeneration:Condition3", class = "bsp"))
+plot(hypothesis(complexity_mod1,"moGeneration:Condition2 = moGeneration:Condition4", class = "bsp"))
+plot(hypothesis(complexity_mod1,"moGeneration:Condition3 = moGeneration:Condition4", class = "bsp"))
 
 
 # Plot conditional effects

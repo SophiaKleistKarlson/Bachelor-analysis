@@ -201,6 +201,24 @@ hypothesis(MSE_mod1,"moGeneration:Condition2 < 0", class = "bsp")
 hypothesis(MSE_mod1,"moGeneration:Condition3 < 0", class = "bsp") 
 hypothesis(MSE_mod1,"moGeneration:Condition4 < 0", class = "bsp")
 
+hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition2", class = "bsp")
+hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition3", class = "bsp") 
+hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition4", class = "bsp") 
+hypothesis(MSE_mod1,"moGeneration:Condition2 = moGeneration:Condition3", class = "bsp")
+hypothesis(MSE_mod1,"moGeneration:Condition2 = moGeneration:Condition4", class = "bsp")
+hypothesis(MSE_mod1,"moGeneration:Condition3 = moGeneration:Condition4", class = "bsp") 
+
+
+# the ones that we expected but that didn't have the highest ER
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 < (Condition2*7 - 0.24*21)/7") 
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 < (Condition3*7 - 0.24*21)/7")
+hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 < (Condition4*7 - 0.20*21)/7")
+
+hypothesis(MSE_mod1,"(Condition3*7 - 0.24*21)/7 < (Condition4*7 - 0.20*21)/7")
+hypothesis(MSE_mod1,"(Condition2*7 - 0.24*21)/7 = (Condition4*7 - 0.20*21)/7")
+
+hypothesis(MSE_mod1,"moGeneration = 0", class = "bsp")
+
 
 # plot the best hypotheses
 plot(hypothesis(MSE_mod1,"(Condition1*7 + 0.04*21)/7 > 0"))
@@ -230,6 +248,13 @@ plot(hypothesis(MSE_mod1,"moGeneration > 0", class = "bsp"))
 plot(hypothesis(MSE_mod1,"moGeneration:Condition2 < 0", class = "bsp")) 
 plot(hypothesis(MSE_mod1,"moGeneration:Condition3 < 0", class = "bsp")) 
 plot(hypothesis(MSE_mod1,"moGeneration:Condition4 < 0", class = "bsp"))
+
+plot(hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition2", class = "bsp"))
+plot(hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition3", class = "bsp")) 
+plot(hypothesis(MSE_mod1,"moGeneration > moGeneration:Condition4", class = "bsp")) 
+plot(hypothesis(MSE_mod1,"moGeneration:Condition2 = moGeneration:Condition3", class = "bsp"))
+plot(hypothesis(MSE_mod1,"moGeneration:Condition2 = moGeneration:Condition4", class = "bsp"))
+plot(hypothesis(MSE_mod1,"moGeneration:Condition3 = moGeneration:Condition4", class = "bsp"))
 
 
 # Plot conditional effects

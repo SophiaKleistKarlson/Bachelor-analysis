@@ -7,6 +7,11 @@ output: html_document
 
 Model 2: conventionality
 
+```{r}
+save.image(file='yoursession.RData')
+#To load this data later you can use:
+load('yoursession.RData')
+```
 
 ```{r}
 # set working directory
@@ -221,6 +226,13 @@ hypothesis(convention_mod1,"moGeneration:Condition2 = moGeneration:Condition3", 
 hypothesis(convention_mod1,"moGeneration:Condition2 = moGeneration:Condition4", class = "bsp")
 hypothesis(convention_mod1,"moGeneration:Condition3 > moGeneration:Condition4", class = "bsp") 
 
+# is average slope of the three memory conditions higher than that of copy?
+hypothesis(convention_mod1,"moGeneration < (moGeneration:Condition2 + moGeneration:Condition3 +moGeneration:Condition4)/3", class = "bsp") # no, there is more evidence that they are equal:
+#Hypothesis Estimate Est.Error CI.Lower CI.Upper Evid.Ratio Post.Prob Star
+#1 (moGeneration)-((... = 0    -0.02      0.02    -0.06     0.01      31.56      0.97  
+
+#Hypothesis Estimate Est.Error CI.Lower CI.Upper Evid.Ratio Post.Prob Star
+#1 (moGeneration)-((... < 0    -0.02      0.02    -0.05     0.01       8.01      0.89 
 
 # initial hyps that did not have the highest ER
 hypothesis(convention_mod1,"(Condition1*8 + 0.01*28)/8 < (Condition2*8 - 0.03*28)/8") 

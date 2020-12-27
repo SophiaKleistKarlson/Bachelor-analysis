@@ -180,7 +180,7 @@ all_conventionality$completion_code <- NULL
 
 Write csv's
 ```{r}
-write.csv(all_conventionality, "data/csv_files/all_conventionalty.csv") # all conventionality scores
+write.csv(all_conventionality, "data/csv_files/all_conventionality.csv") # all conventionality scores
 write.csv(completion_codes, "data/csv_files/completion_codes.csv") # completion codes
 write.csv(completion_codes_2, "data/csv_files/completion_codes_2.csv") # completion codes 2
 ```

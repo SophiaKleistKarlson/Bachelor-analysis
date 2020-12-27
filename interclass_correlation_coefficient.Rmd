@@ -1,0 +1,59 @@
+---
+title: "Interclass_correlation"
+author: "Sophia Kleist Karlson"
+date: "26/12/2020"
+output: html_document
+---
+
+
+```{r}
+# set working directory
+setwd("~/Social Transmission Study/Analysis of drawings/")
+
+# load necessary packages through pacman
+pacman::p_load(tidyverse, irr, tidyr)
+
+# RStudio version
+RStudio.Version()
+
+# read data and delete the first unnecessary column
+data_irr <- read_csv("data/csv_files/all_conventionality.csv") #we use all_conventionality.csv
+data_irr$X1 <- NULL
+
+# only use complete cases (the NA's are from where coder ID's were in another row)
+data_irr <- data_irr[complete.cases(data_irr), ]
+
+data_irr <- data_irr %>% arrange(data_irr$Drawing_ID)
+
+data_irr$rater <- rep(1:16,1692)
+
+data_irr$rater <- as.factor(data_irr$rater)
+
+data_irr <- spread(data_irr, rater, Conventionality)
+
+ratings <- data_irr
+
+ratings$Drawing_ID <- NULL
+
+icc(ratings, model = c("oneway"),
+  type = c("consistency"),
+  unit = c("single"), r0 = 0, conf.level = 0.95)
+
+```
+
+Results: 
+> icc
+ Single Score Intraclass Correlation
+
+   Model: oneway 
+   Type : consistency 
+
+   Subjects = 1692 
+     Raters = 16 
+     ICC(1) = 0.0584
+
+ F-Test, H0: r0 = 0 ; H1: r0 > 0 
+F(1691,25380) = 1.99 , p = 6.56e-103 
+
+ 95%-Confidence Interval for ICC Population Values:
+  0.051 < ICC < 0.066

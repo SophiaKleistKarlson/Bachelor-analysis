@@ -1,5 +1,5 @@
-# Bachelor-analysis
-Code for the analysis for my bachelor project
+## Bachelor analysis: The drawing memory transmission study
+Code for the preprocessing and statistical analysis for my bachelor project
 
 
 The scripts should be run in the following order (scripts 1-6 are found in the preprocessing folder):
@@ -23,5 +23,7 @@ The scripts should be run in the following order (scripts 1-6 are found in the p
 9: Analysis_mod_conv
 
 10: Analysis_mod_MSE
+
+11: interclass_correlation_coefficient
 
 NB: For replicating the analysis without the original data, please go to https://github.com/SophiaKleistKarlson/CDS-final-project where partially preprocessed data can be found (not containing personal information of the participants).

@@ -1,4 +1,4 @@
-## Bachelor analysis: The drawing memory transmission study
+## Bachelor analysis: Drawing memory study
 Code for the preprocessing and statistical analysis for my bachelor project
 
 

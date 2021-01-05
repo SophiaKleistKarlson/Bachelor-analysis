@@ -2,7 +2,7 @@
 Code for the analysis for my bachelor project
 
 
-The scripts should be run in the following order:
+The scripts should be run in the following order (scripts 1-6 are found in the preprocessing folder):
 
 1: Preprocessing_script
 

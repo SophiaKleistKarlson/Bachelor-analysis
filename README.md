@@ -24,4 +24,4 @@ The scripts should be run in the following order (scripts 1-6 are found in the p
 
 10: Analysis_mod_MSE
 
-
+NB: For replicating the analysis without the original data, please go to https://github.com/SophiaKleistKarlson/CDS-final-project where partially preprocessed data can be found (not containing personal information of the participants).

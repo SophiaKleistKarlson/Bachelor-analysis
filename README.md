@@ -2,7 +2,8 @@
 Code for the preprocessing and statistical analysis for my bachelor project
 
 Link to all drawings produced by the participants: https://lab.box.eer.info/transmission/pages/cobelab-results/
-The titles of the drawings in each chain refer to the condition the drawing was in and an ID (1-3 in each condition), e.g. "cond_1_stim_3". Under each row of drawings, the generation is indicated; the "original" drawings are the source drawings, "0" is the first generation of participants, and so forth.
+
+The titles of each row of drawings refer to the condition the drawing was in and an ID (1-3 in each condition), e.g. "cond_1_stim_3". Under each row, the generation is indicated; the "original" drawings are the source drawings, "0" is the reproduction by the first generation, and so forth.
 
 The scripts should be run in the following order (scripts 1-6 are found in the preprocessing folder):
 

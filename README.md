@@ -1,6 +1,7 @@
 ## Bachelor analysis: Drawing memory study
 Code for the preprocessing and statistical analysis for my bachelor project
 
+Link to all drawings: https://lab.box.eer.info/transmission/pages/cobelab-results/
 
 The scripts should be run in the following order (scripts 1-6 are found in the preprocessing folder):
 
